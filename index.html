@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AiVA — AI Virtual Assistant</title>
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Local Balsamiq Sans font (place fonts/BalsamiqSans-Regular.ttf in repo) -->
+  <style>
+    @font-face {
+      font-family: 'Balsamiq Sans';
+      src: url('fonts/BalsamiqSans-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    :root{
+      --bg: #071019;
+      --panel: #0f1b20;
+      --muted: #9fb0b7;
+      --accent: #4fb6ff;
+      --accent2: #20c997;
+      --card: #0b1316;
+    }
+    html,body,#app{height:100%}
+    body { font-family: 'Balsamiq Sans', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,var(--bg),#041018); color: #e6eef3; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    /* small helper for code blocks */
+    pre { background:#07141a; padding:12px; border-radius:8px; overflow:auto; }
+  </style>
+
+  <!-- Prism.js for code highlighting -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <meta name="description" content="AiVA — Claude-style AI Virtual Assistant (frontend). Replace placeholders for SERVER_BASE and Firebase config.">
+</head>
+<body>
+  <div id="app" class="h-full flex">
+    <!-- SIDEBAR -->
+    <aside class="w-80 bg-[rgba(6,12,14,0.95)] border-r border-neutral-800 p-4 flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-teal-400 flex items-center justify-center text-xl">🤖</div>
+        <div>
+          <div class="text-2xl font-semibold tracking-tight">AiVA</div>
+          <div class="text-xs text-[var(--muted)]">AI Virtual Assistant</div>
+        </div>
+      </div>
+
+      <!-- AUTH -->
+      <div id="authArea" class="space-y-3">
+        <div id="signedOut">
+          <input id="email" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Email" type="email" />
+          <input id="password" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Password" type="password" />
+          <div class="flex items-center gap-2">
+            <input id="acceptTerms" type="checkbox" class="accent-[var(--accent)]" />
+            <label for="acceptTerms" class="text-xs text-[var(--muted)]">I accept <a id="termsLink" href="#" class="text-[var(--accent)] underline">Terms</a> & <a id="privacyLink" href="#" class="text-[var(--accent)] underline">Privacy</a></label>
+          </div>
+          <div class="flex gap-2">
+            <button id="signupBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Sign up</button>
+            <button id="signinBtn" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Sign in</button>
+          </div>
+          <button id="googleBtn" class="w-full py-2 rounded bg-white/10 text-sm">Sign in with Google</button>
+          <div id="authError" class="text-xs text-red-400 mt-1"></div>
+        </div>
+
+        <div id="signedIn" class="hidden">
+          <div class="flex items-center gap-3">
+            <img id="userPic" src="" alt="avatar" class="w-10 h-10 rounded-full object-cover hidden">
+            <div>
+              <div id="userName" class="font-medium"></div>
+              <div id="userEmail" class="text-xs text-[var(--muted)]"></div>
+            </div>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <button id="newConvBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">New Chat</button>
+            <button id="logoutBtn" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH -->
+      <input id="searchInput" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Search conversations..." />
+
+      <!-- CONVERSATIONS -->
+      <div id="conversations" class="flex-1 overflow-auto space-y-2 py-2">
+        <!-- conversation items injected -->
+      </div>
+
+      <!-- QUICK PROMPTS -->
+      <div class="text-xs text-[var(--muted)]">
+        <div class="mb-2">Quick prompts</div>
+        <div class="flex flex-col gap-2">
+          <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Explain like I'm five</button>
+          <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Summarize this text</button>
+          <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Generate code snippet</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-1 flex flex-col">
+      <!-- HEADER -->
+      <div class="px-6 py-4 border-b border-neutral-800 flex items-center justify-between bg-[var(--panel)]">
+        <div class="flex items-center gap-4">
+          <div>
+            <div class="text-xl font-semibold">AiVA</div>
+            <div class="text-xs text-[var(--muted)]">AI Virtual Assistant</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="settingsBtn" class="px-3 py-1 rounded border border-neutral-700 text-[var(--muted)] text-sm">Settings</button>
+        </div>
+      </div>
+
+      <!-- LAYOUT -->
+      <div class="flex-1 p-6 gap-6 flex">
+        <!-- MESSAGES -->
+        <section class="flex-1 flex flex-col">
+          <div id="chatHeader" class="flex items-center gap-4 mb-3">
+            <div id="activeConvTitle" class="text-lg font-semibold">Select or start a conversation</div>
+            <div id="typingIndicator" class="text-sm text-[var(--accent)] hidden">AiVA is typing…</div>
+          </div>
+
+          <div id="messages" class="flex-1 p-4 rounded-lg bg-[var(--card)] overflow-auto space-y-3">
+            <!-- messages appended here -->
+          </div>
+
+          <!-- Reply preview -->
+          <div id="replyPreview" class="hidden mt-2 bg-[#0f1f22] border-l-4 border-[var(--accent2)] px-3 py-2 rounded">
+            <div class="flex justify-between items-center text-sm text-[var(--muted)]">
+              <div id="replyMeta">Replying to <strong id="replyAuthor"></strong></div>
+              <button id="cancelReply" class="text-xs text-[var(--muted)]">×</button>
+            </div>
+            <div id="replyText" class="text-sm mt-1 text-[#dbe7ea]"></div>
+          </div>
+
+          <div class="mt-4 flex items-center gap-3">
+            <textarea id="messageInput" rows="2" class="flex-1 px-3 py-2 rounded bg-[#07141a] border border-neutral-800 resize-none" placeholder="Ask AiVA anything... (English)"></textarea>
+            <div class="flex flex-col gap-2">
+              <button id="sendBtn" class="px-4 py-2 rounded bg-[var(--accent)] text-black font-semibold">Send</button>
+              <button id="attachBtn" class="px-4 py-2 rounded border border-neutral-700 text-[var(--muted)]">Attach</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT TOOLS -->
+        <aside class="w-96 flex flex-col gap-4">
+          <div class="rounded-lg bg-[var(--card)] p-4">
+            <div class="font-semibold mb-2">Tools</div>
+            <div class="flex flex-col gap-2">
+              <button id="showCodeBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Code Playground</button>
+              <button id="showDocsBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Documents</button>
+              <button id="showChartBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Insert Chart</button>
+            </div>
+          </div>
+
+          <div id="previewPanel" class="rounded-lg bg-[var(--card)] p-4 flex-1 overflow-auto">
+            <div id="previewInner" class="text-[var(--muted)] text-sm">Preview / Code / Charts will appear here</div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60">
+    <div class="w-[700px] bg-[var(--panel)] rounded p-5">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-semibold">Settings</h3>
+        <button id="closeSettings" class="text-[var(--muted)]">✕</button>
+      </div>
+      <div class="space-y-3 text-[var(--muted)]">
+        <div>
+          <label class="block text-sm mb-1">Model (proxy)</label>
+          <select id="modelSelect" class="w-full bg-[#07141a] px-3 py-2 rounded border border-neutral-800">
+            <option value="openai/gpt-3.5-turbo">gpt-3.5-turbo</option>
+            <option value="openai/gpt-4o-mini">gpt-4o-mini</option>
+            <option value="openai/gpt-oss-120b:together" selected>gpt-oss-120b:together</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Context size (messages)</label>
+          <input id="maxMessages" type="number" min="3" max="200" value="20" class="w-full bg-[#07141a] px-3 py-2 rounded border border-neutral-800" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Auto-save conversation</label>
+          <input id="autoSave" type="checkbox" class="accent-[var(--accent)]" checked />
+        </div>
+        <div class="flex justify-end">
+          <button id="saveSettings" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERMS & PRIVACY -->
+  <div id="termsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60">
+    <div class="w-3/4 max-w-2xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-semibold">Terms & Conditions</h3>
+        <button onclick="closeModal('termsModal')" class="text-[var(--muted)]">✕</button>
+      </div>
+      <div class="text-sm text-[var(--muted)]">
+        <p>Placeholder Terms & Conditions. Replace with your legal text before production.</p>
+      </div>
+      <div class="mt-4 text-right">
+        <button onclick="closeModal('termsModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="privacyModal" class="fixed inset-0 hidden items-center justify-center bg-black/60">
+    <div class="w-3/4 max-w-2xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-semibold">Privacy Policy</h3>
+        <button onclick="closeModal('privacyModal')" class="text-[var(--muted)]">✕</button>
+      </div>
+      <div class="text-sm text-[var(--muted)]">
+        <p>Placeholder Privacy Policy. Replace with your legal text before production.</p>
+      </div>
+      <div class="mt-4 text-right">
+        <button onclick="closeModal('privacyModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXT MENU -->
+  <div id="contextMenu" class="absolute z-50 hidden bg-[var(--panel)] border border-neutral-800 rounded shadow">
+    <button id="ctxReply" class="block px-4 py-2 text-sm w-full text-left">Reply</button>
+    <button id="ctxDelete" class="block px-4 py-2 text-sm w-full text-left">Delete for me</button>
+    <button id="ctxDeleteAll" class="block px-4 py-2 text-sm w-full text-left">Delete for everyone</button>
+  </div>
+
+  <!-- SCRIPT -->
+  <script>
+    /* ========== CONFIG - replace placeholders ========== */
+    const SERVER_BASE = "https://YOUR_RENDER_BACKEND_URL"; // e.g. https://your-app.onrender.com
+    const FIREBASE_CONFIG = {
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+      projectId: "YOUR_FIREBASE_PROJECT_ID",
+      // ... other firebase config if available
+    };
+    /* ================================================== */
+
+    // Initialize Firebase
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const auth = firebase.auth();
+
+    // UI refs
+    const signedOutEl = document.getElementById('signedOut');
+    const signedInEl = document.getElementById('signedIn');
+    const authError = document.getElementById('authError');
+    const signupBtn = document.getElementById('signupBtn');
+    const signinBtn = document.getElementById('signinBtn');
+    const googleBtn = document.getElementById('googleBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const newConvBtn = document.getElementById('newConvBtn');
+    const userNameEl = document.getElementById('userName');
+    const userEmailEl = document.getElementById('userEmail');
+    const userPicEl = document.getElementById('userPic');
+    const acceptTerms = document.getElementById('acceptTerms');
+
+    const conversationsEl = document.getElementById('conversations');
+    const messagesEl = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const searchInput = document.getElementById('searchInput');
+    const quickBtns = document.querySelectorAll('.quick-btn');
+    const previewInner = document.getElementById('previewInner');
+
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettings = document.getElementById('closeSettings');
+    const saveSettings = document.getElementById('saveSettings');
+    const modelSelect = document.getElementById('modelSelect');
+    const maxMessagesInput = document.getElementById('maxMessages');
+    const autoSave = document.getElementById('autoSave');
+
+    const termsLink = document.getElementById('termsLink');
+    const privacyLink = document.getElementById('privacyLink');
+
+    const replyPreview = document.getElementById('replyPreview');
+    const replyAuthor = document.getElementById('replyAuthor');
+    const replyText = document.getElementById('replyText');
+    const cancelReplyBtn = document.getElementById('cancelReply');
+
+    const typingIndicator = document.getElementById('typingIndicator');
+    const activeConvTitle = document.getElementById('activeConvTitle');
+
+    const contextMenu = document.getElementById('contextMenu');
+    const ctxReply = document.getElementById('ctxReply');
+    const ctxDelete = document.getElementById('ctxDelete');
+    const ctxDeleteAll = document.getElementById('ctxDeleteAll');
+
+    // State
+    let currentUser = null;
+    let conversations = []; // array of {id, title, lastMessage, updatedAt}
+    let activeConversationId = null;
+    let pollHandle = null;
+    let replyTo = null;
+    let messageDraft = '';
+    let settings = { model: modelSelect.value, maxMessages: Number(maxMessagesInput.value), autoSave: autoSave.checked };
+    let contextTargetMsgId = null;
+
+    // Helpers
+    const el = (tag, cls='') => { const d = document.createElement(tag); if(cls) d.className = cls; return d; };
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function truncate(s, n=120){ if(!s) return ''; return s.length>n ? s.slice(0,n)+'...' : s; }
+    function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+    function closeModal(id){ document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+
+    // AUTH
+    signupBtn.addEventListener('click', async ()=>{
+      authError.textContent = '';
+      if (!acceptTerms.checked){ authError.textContent = 'Accept Terms & Privacy'; return; }
+      const email = document.getElementById('email').value.trim();
+      const pwd = document.getElementById('password').value;
+      try { await auth.createUserWithEmailAndPassword(email, pwd); }
+      catch(e){ authError.textContent = e.message; }
+    });
+
+    signinBtn.addEventListener('click', async ()=>{
+      authError.textContent = '';
+      if (!acceptTerms.checked){ authError.textContent = 'Accept Terms & Privacy'; return; }
+      const email = document.getElementById('email').value.trim();
+      const pwd = document.getElementById('password').value;
+      try { await auth.signInWithEmailAndPassword(email, pwd); }
+      catch(e){ authError.textContent = e.message; }
+    });
+
+    googleBtn.addEventListener('click', async ()=>{
+      authError.textContent = '';
+      if (!acceptTerms.checked){ authError.textContent = 'Accept Terms & Privacy'; return; }
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try { await auth.signInWithPopup(provider); }
+      catch(e){ authError.textContent = e.message; }
+    });
+
+    logoutBtn.addEventListener('click', ()=> { auth.signOut(); });
+
+    auth.onAuthStateChanged(async user => {
+      currentUser = user;
+      if (user) {
+        signedOutEl.classList.add('hidden');
+        signedInEl.classList.remove('hidden');
+        userNameEl.textContent = user.displayName || 'You';
+        userEmailEl.textContent = user.email;
+        if (user.photoURL){ userPicEl.src = user.photoURL; userPicEl.classList.remove('hidden'); }
+        await loadConversations();
+      } else {
+        signedOutEl.classList.remove('hidden');
+        signedInEl.classList.add('hidden');
+        conversationsEl.innerHTML = '';
+        messagesEl.innerHTML = '';
+        activeConversationId = null;
+        if (pollHandle) clearInterval(pollHandle);
+      }
+    });
+
+    // CONVERSATIONS API interactions (server must implement endpoints)
+    async function loadConversations(){
+      if (!currentUser) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch(`${SERVER_BASE}/api/conversations`, { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Failed to load conversations');
+        conversations = await res.json();
+        renderConversationList();
+      } catch (e){ console.error(e); }
+    }
+
+    function renderConversationList(){
+      conversationsEl.innerHTML = '';
+      const q = searchInput.value.trim().toLowerCase();
+      conversations.filter(c => !q || (c.title||'').toLowerCase().includes(q) || (c.lastMessage||'').toLowerCase().includes(q))
+        .forEach(c=>{
+          const row = el('div','p-3 rounded hover:bg-[#08171b] cursor-pointer');
+          if (c.id === activeConversationId) row.classList.add('bg-[#071f23]');
+          row.innerHTML = `<div class="flex justify-between"><div class="font-medium">${escapeHtml(c.title||'Untitled')}</div><div class="text-xs text-[var(--muted)]">${new Date(c.updatedAt||c.createdAt||Date.now()).toLocaleString()}</div></div>
+                           <div class="text-sm text-[var(--muted)] mt-1">${escapeHtml(truncate(c.lastMessage||'No messages yet', 60))}</div>`;
+          row.addEventListener('click', ()=> openConversation(c.id));
+          conversationsEl.appendChild(row);
+        });
+    }
+
+    // CREATE new conversation
+    newConvBtn.addEventListener('click', async ()=>{
+      if (!currentUser) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch(`${SERVER_BASE}/api/conversations`, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type':'application/json' },
+          body: JSON.stringify({ title: 'New Conversation' })
+        });
+        if (!res.ok) throw new Error('Create conversation failed');
+        const conv = await res.json();
+        await loadConversations();
+        openConversation(conv.id);
+      } catch (e){ console.error(e); }
+    });
+
+    // OPEN conversation
+    async function openConversation(convId){
+      activeConversationId = convId;
+      renderConversationList();
+      await loadMessages(convId);
+      activeConvTitle.textContent = conversations.find(c=>c.id===convId)?.title || 'Conversation';
+      if (pollHandle) clearInterval(pollHandle);
+      pollHandle = setInterval(()=> pollUpdates(convId), 3000);
+    }
+
+    // LOAD messages
+    async function loadMessages(convId){
+      if (!currentUser || !convId) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages`, {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to load messages');
+        const messages = await res.json();
+        renderMessages(messages);
+      } catch (e){ console.error(e); }
+    }
+
+    // RENDER messages with support for code blocks, charts, reply-> and meta
+    function renderMessages(messages){
+      messagesEl.innerHTML = '';
+      for (const m of messages){
+        const wrapper = el('div','flex');
+        wrapper.style.flexDirection = (m.role === 'user') ? 'row-reverse' : 'row';
+        const bubble = el('div','p-3 rounded-lg max-w-[80%] break-words');
+        bubble.classList.add(m.role === 'user' ? 'bg-[var(--accent)] text-black' : 'bg-[#07181c] text-[var(--muted)]');
+
+        // replyTo preview
+        if (m.replyTo) {
+          const rp = el('div','text-xs mb-2 rounded px-2 py-1 bg-[#041016]');
+          rp.innerHTML = `<strong class="text-[var(--accent)]">${escapeHtml(m.replyTo.author)}</strong>: ${escapeHtml(truncate(m.replyTo.text,80))}`;
+          bubble.appendChild(rp);
+        }
+
+        // code block detection
+        if (m.text && m.text.trim().startsWith('```')) {
+          const code = m.text.replace(/^\s*```[a-z]*\n?/, '').replace(/\n?```$/, '');
+          const pre = el('pre'); const codeEl = el('code','language-javascript');
+          codeEl.textContent = code;
+          pre.appendChild(codeEl); bubble.appendChild(pre);
+          setTimeout(()=> Prism.highlightElement(codeEl), 30);
+        } else if (m.meta && m.meta.type === 'chart' && m.meta.data) {
+          const canvas = el('canvas'); canvas.width = 400; canvas.height = 220;
+          bubble.appendChild(canvas);
+          setTimeout(()=> {
+            try { new Chart(canvas.getContext('2d'), m.meta.data); } catch(e){ console.error(e); }
+          }, 30);
+        } else {
+          bubble.innerHTML += `<div>${escapeHtml(m.text || '')}</div>`;
+        }
+
+        const footer = el('div','text-[var(--muted)] text-xs mt-2 flex gap-2 items-center');
+        footer.innerHTML = `<span>${new Date(m.createdAt||Date.now()).toLocaleTimeString()}</span>
+                            <button data-id="${m.id}" class="replyBtn text-[var(--muted)] text-xs">Reply</button>
+                            <button data-id="${m.id}" class="menuBtn text-[var(--muted)] text-xs">⋯</button>`;
+        bubble.appendChild(footer);
+
+        wrapper.appendChild(bubble);
+        messagesEl.appendChild(wrapper);
+      }
+
+      // attach delegate events
+      messagesEl.querySelectorAll('.replyBtn').forEach(btn=>{
+        btn.onclick = (e)=> {
+          const id = btn.dataset.id;
+          const msg = messages.find(x=>String(x.id)===String(id));
+          if (msg){ setReply(msg); }
+        };
+      });
+      messagesEl.querySelectorAll('.menuBtn').forEach(btn=>{
+        btn.onclick = (e)=> {
+          const id = btn.dataset.id;
+          showContextMenu(e.pageX, e.pageY, id);
+        };
+      });
+
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // Reply handling
+    function setReply(msg){
+      replyTo = { id: msg.id, text: msg.text, author: msg.role === 'user' ? 'You' : 'AiVA' };
+      replyAuthor.textContent = replyTo.author;
+      replyText.textContent = truncate(replyTo.text, 200);
+      replyPreview.classList.remove('hidden');
+    }
+    cancelReplyBtn.addEventListener('click', ()=> { replyTo = null; replyPreview.classList.add('hidden'); });
+
+    // SEND message (calls backend which does context aggregation and model call)
+    sendBtn.addEventListener('click', async ()=>{
+      const text = messageInput.value.trim();
+      if (!text || !activeConversationId || !currentUser) return;
+      // optimistic UI
+      appendLocalMessage(text);
+      messageInput.value = '';
+      replyPreview.classList.add('hidden');
+      try {
+        const token = await currentUser.getIdToken();
+        typingIndicator.classList.remove('hidden');
+        const payload = { conversationId: activeConversationId, text, replyTo: replyTo ? replyTo.id : null, settings };
+        const res = await fetch(`${SERVER_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
+        typingIndicator.classList.add('hidden');
+        if (!res.ok){ const txt = await res.text(); throw new Error(txt || 'server error'); }
+        const json = await res.json();
+        // server returns { reply, saved: true }
+        await loadMessages(activeConversationId);
+        await loadConversations();
+      } catch (e) {
+        typingIndicator.classList.add('hidden');
+        appendLocalAssistantMessage('Error: ' + (e.message || 'Failed'));
+        console.error(e);
+      } finally {
+        replyTo = null;
+      }
+    });
+
+    function appendLocalMessage(text){
+      const wrapper = el('div','flex'); wrapper.style.flexDirection = 'row-reverse';
+      const bubble = el('div','p-3 rounded-lg max-w-[80%] bg-[var(--accent)] text-black');
+      bubble.textContent = text;
+      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function appendLocalAssistantMessage(text){
+      const wrapper = el('div','flex'); wrapper.style.flexDirection = 'row';
+      const bubble = el('div','p-3 rounded-lg max-w-[80%] bg-[#07181c] text-[var(--muted)]');
+      bubble.textContent = text;
+      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // Poll updates (background-worker friendly)
+    async function pollUpdates(convId){
+      if (!currentUser || !convId) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages?since=${Date.now()-5000}`, {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!res.ok) return;
+        const updates = await res.json();
+        if (updates && updates.length) {
+          await loadMessages(convId);
+          await loadConversations();
+        }
+      } catch(e){ console.debug('poll error', e); }
+    }
+
+    // Context menu
+    function showContextMenu(x,y,msgId){
+      contextTargetMsgId = msgId;
+      contextMenu.style.left = x + 'px';
+      contextMenu.style.top = y + 'px';
+      contextMenu.classList.remove('hidden');
+    }
+    document.addEventListener('click', ()=> contextMenu.classList.add('hidden'));
+
+    ctxReply.addEventListener('click', async ()=>{
+      if (!contextTargetMsgId) return;
+      // fetch message (server endpoint available) - simplified: set reply locally
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, {
+        headers: { Authorization: 'Bearer ' + token }
+      }).catch(()=>null);
+      if (res && res.ok){
+        const msg = await res.json();
+        setReply(msg);
+      }
+    });
+
+    ctxDelete.addEventListener('click', async ()=>{
+      if (!contextTargetMsgId) return;
+      try {
+        const token = await currentUser.getIdToken();
+        await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, {
+          method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
+        });
+        await loadMessages(activeConversationId);
+      } catch(e){ console.error(e); }
+    });
+
+    ctxDeleteAll.addEventListener('click', async ()=>{
+      if (!contextTargetMsgId) return;
+      try {
+        const token = await currentUser.getIdToken();
+        await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}?forEveryone=1`, {
+          method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
+        });
+        await loadMessages(activeConversationId);
+      } catch(e){ console.error(e); }
+    });
+
+    // Quick prompts
+    quickBtns.forEach(b => b.addEventListener('click', ()=> { messageInput.value = b.textContent; messageInput.focus(); }));
+
+    // Preview tools
+    document.getElementById('showCodeBtn').addEventListener('click', ()=> {
+      previewInner.innerHTML = `<div class="text-sm text-[var(--muted)]">Code playground — paste code in chat with triple backticks.</div>
+                                <pre><code class="language-javascript">console.log('Hello AiVA');</code></pre>`;
+      Prism.highlightAll();
+    });
+    document.getElementById('showDocsBtn').addEventListener('click', ()=> {
+      previewInner.innerHTML = `<div class="text-sm text-[var(--muted)]">Documents — upload & parse via server (requires backend).</div>`;
+    });
+    document.getElementById('showChartBtn').addEventListener('click', ()=> {
+      previewInner.innerHTML = `<canvas id="previewChart" width="350" height="220"></canvas>`;
+      setTimeout(()=> {
+        const ctx = document.getElementById('previewChart').getContext('2d');
+        new Chart(ctx, { type:'bar', data:{ labels:['A','B','C'], datasets:[{label:'Example', data:[12,19,7]}] } });
+      }, 40);
+    });
+
+    // Settings modal
+    settingsBtn.addEventListener('click', ()=> openModal('settingsModal'));
+    closeSettings.addEventListener('click', ()=> closeModal('settingsModal'));
+    saveSettings.addEventListener('click', ()=>{
+      settings.model = modelSelect.value;
+      settings.maxMessages = Number(maxMessagesInput.value);
+      settings.autoSave = autoSave.checked;
+      closeModal('settingsModal');
+    });
+
+    // Terms/privacy links
+    termsLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('termsModal'); });
+    privacyLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('privacyModal'); });
+    window.closeModal = closeModal;
+
+    // keyboard send
+    messageInput.addEventListener('keydown', (e)=> { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
+
+    // search filtering
+    searchInput.addEventListener('input', ()=> renderConversationList());
+
+    // page visibility: manage polling
+    document.addEventListener('visibilitychange', ()=> {
+      if (document.hidden) { if (pollHandle) clearInterval(pollHandle); }
+      else if (activeConversationId) pollHandle = setInterval(()=> pollUpdates(activeConversationId), 3000);
+    });
+
+    // initial no-op
+  </script>
+</body>
+</html>
