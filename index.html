@@ -8,7 +8,6 @@
   <!-- Tailwind CSS (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Local Balsamiq Sans font (optional) -->
   <style>
     @font-face {
       font-family: 'Balsamiq Sans';
@@ -57,11 +56,15 @@
       </div>
     </header>
 
+    <div id="topWarning" class="hidden bg-yellow-600 text-black px-4 py-2 text-sm">Warning: SERVER_BASE not configured — chat will fail until you set your backend URL.</div>
+
     <div class="flex flex-1">
       <!-- SIDEBAR -->
       <aside id="sidebar" class="hidden sm:flex sm:w-72 lg:w-80 bg-[rgba(6,12,14,0.95)] border-r border-neutral-800 p-4 flex-col gap-4">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-teal-400 flex items-center justify-center text-xl">🤖</div>
+          <button id="logoBtn" class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center">
+            <img id="logoImg" src="ai.png" alt="AiVA" class="w-full h-full object-cover" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend','<div class=\\'w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-teal-400 flex items-center justify-center text-xl\\'>🤖</div>')">
+          </button>
           <div>
             <div class="text-2xl font-semibold tracking-tight">AiVA</div>
             <div class="text-xs text-[var(--muted)]">AI Virtual Assistant</div>
@@ -79,13 +82,18 @@
           </div>
 
           <div id="signedInSidebar" class="hidden">
-            <div class="flex items-center gap-3">
-              <img id="userPic" src="" alt="avatar" class="w-10 h-10 rounded-full object-cover hidden">
+            <!-- User card (Google name + profile) -->
+            <div id="userCard" class="bg-[#07141a] rounded p-3 flex items-center gap-3">
+              <img id="userPic" src="" alt="avatar" class="w-12 h-12 rounded-full object-cover hidden">
               <div>
-                <div id="userName" class="font-medium"></div>
-                <div id="userEmail" class="text-xs text-[var(--muted)]"></div>
+                <div id="userName" class="font-medium">You</div>
+                <div id="userEmail" class="text-xs text-[var(--muted)]">email</div>
+                <div class="mt-2">
+                  <button id="openProfileBtn" class="text-xs px-3 py-1 rounded bg-white/5">Profile</button>
+                </div>
               </div>
             </div>
+
             <div class="mt-3 flex gap-2">
               <button id="newConvBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">New Chat</button>
               <button id="logoutBtn" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Logout</button>
@@ -98,16 +106,6 @@
 
         <!-- CONVERSATIONS -->
         <div id="conversations" class="flex-1 overflow-auto space-y-2 py-2"></div>
-
-        <!-- QUICK PROMPTS -->
-        <div class="text-xs text-[var(--muted)]">
-          <div class="mb-2">Quick prompts</div>
-          <div class="flex flex-col gap-2">
-            <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Explain like I'm five</button>
-            <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Summarize this text</button>
-            <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Generate code snippet</button>
-          </div>
-        </div>
       </aside>
 
       <!-- MAIN -->
@@ -166,7 +164,6 @@
               <div class="font-semibold mb-2">Tools</div>
               <div class="flex flex-col gap-2">
                 <button id="showCodeBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Code Playground</button>
-                <!-- keep only useful tools; other advanced features are intentionally hidden until implemented -->
               </div>
             </div>
 
@@ -179,7 +176,7 @@
       </main>
     </div>
 
-    <!-- AUTH FULLSCREEN PANELS (separate Sign in & Sign up screens as requested) -->
+    <!-- AUTH FULLSCREEN PANELS (separate Sign in & Sign up screens) -->
     <div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 hidden">
       <div class="w-full max-w-2xl mx-4 bg-[var(--panel)] rounded-lg p-6">
         <div class="flex items-center justify-between mb-4">
@@ -198,7 +195,10 @@
             <div class="flex items-center gap-2">
               <button id="googleBtn" class="w-full py-2 rounded bg-white/10 text-sm">Sign in with Google</button>
             </div>
-            <div id="authError" class="text-xs text-red-400 mt-1"></div>
+            <div class="flex items-center justify-between text-xs text-[var(--muted)]">
+              <button id="forgotPassBtn" class="underline">Forgot password?</button>
+              <div id="authError" class="text-xs text-red-400"></div>
+            </div>
           </div>
         </div>
 
@@ -214,13 +214,93 @@
               <button id="signupBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Create account</button>
               <button id="gotoSignIn2" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Already have an account</button>
             </div>
+            <div class="text-xs text-[var(--muted)]">After sign up an email verification will be sent.</div>
             <div id="authErrorSign" class="text-xs text-red-400 mt-1"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- TERMS & PRIVACY MODALS (with more detailed placeholder content + disclaimer) -->
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
+      <div class="w-[720px] bg-[var(--panel)] rounded p-5">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-lg font-semibold">Settings</h3>
+          <button id="closeSettings" class="text-[var(--muted)]">✕</button>
+        </div>
+        <div class="space-y-3 text-[var(--muted)]">
+          <div>
+            <label class="block text-sm mb-1">Model (proxy)</label>
+            <select id="modelSelect" class="w-full bg-[#07141a] px-3 py-2 rounded border border-neutral-800">
+              <option value="openai/gpt-3.5-turbo">gpt-3.5-turbo</option>
+              <option value="openai/gpt-4o-mini">gpt-4o-mini</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Max messages per conversation</label>
+            <input id="maxMessages" type="number" min="3" max="200" value="20" class="w-full bg-[#07141a] px-3 py-2 rounded border border-neutral-800" />
+            <div class="text-xs text-[var(--muted)] mt-1">When a conversation reaches this limit, new messages are blocked.</div>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Auto-save conversation</label>
+            <input id="autoSave" type="checkbox" class="accent-[var(--accent)]" checked />
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="changePassBtn" class="px-3 py-2 rounded bg-white/5 text-sm">Change password</button>
+            <button id="sendVerifyBtn" class="px-3 py-2 rounded bg-white/5 text-sm">Send verification email</button>
+          </div>
+
+          <div class="flex justify-between items-center mt-3">
+            <div class="text-xs text-[var(--muted)]">Signed in as <span id="settingsUserEmail" class="font-medium"></span></div>
+            <div class="flex gap-2">
+              <button id="saveSettings" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Save</button>
+              <button id="logoutSettings" class="px-4 py-2 rounded border border-neutral-700">Logout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT / LOGO CLICK MODAL -->
+    <div id="aboutModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
+      <div class="w-full max-w-md bg-[var(--panel)] rounded p-5 text-center">
+        <h3 class="text-lg font-semibold mb-2">About AiVA</h3>
+        <p class="text-[var(--muted)] text-sm mb-4">AiVA — your Claude-style AI assistant. Click the logo to open this dialog. Replace ai.png in project root to change logo.</p>
+        <div><button onclick="closeModal('aboutModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button></div>
+      </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL -->
+    <div id="changePassModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
+      <div class="w-full max-w-md bg-[var(--panel)] rounded p-5">
+        <h3 class="text-lg font-semibold mb-3">Change password</h3>
+        <div class="space-y-3">
+          <input id="currentPass" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Current password" type="password" />
+          <input id="newPass" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="New password" type="password" />
+          <div id="changePassError" class="text-xs text-red-400"></div>
+          <div class="flex justify-end gap-2">
+            <button onclick="closeModal('changePassModal')" class="px-3 py-2 rounded border">Cancel</button>
+            <button id="doChangePass" class="px-3 py-2 rounded bg-[var(--accent)] text-black">Change</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD NOTICE -->
+    <div id="forgotNotice" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
+      <div class="w-full max-w-md bg-[var(--panel)] rounded p-5 text-center">
+        <h3 class="text-lg font-semibold mb-2">Reset password</h3>
+        <p class="text-[var(--muted)] text-sm mb-4">A password reset link will be sent to the email you entered on the sign in form.</p>
+        <div class="flex justify-center gap-2">
+          <button onclick="closeModal('forgotNotice')" class="px-4 py-2 rounded border">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMS & PRIVACY MODALS -->
     <div id="termsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-40">
       <div class="w-11/12 max-w-3xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
         <div class="flex justify-between items-center mb-3">
@@ -231,19 +311,6 @@
           <p>Welcome to AiVA. By using our service you agree to these Terms & Conditions. Please read carefully.</p>
           <h4 class="font-medium">1. Service</h4>
           <p>AiVA is a conversational AI assistant intended for informational and productivity uses. We may provide automated responses generated by models; these are not guaranteed to be accurate and should not be relied upon for professional advice.</p>
-
-          <h4 class="font-medium">2. Accounts</h4>
-          <p>Users must provide accurate information. You are responsible for activity under your account and must keep credentials secure.</p>
-
-          <h4 class="font-medium">3. Acceptable use</h4>
-          <p>Do not use the service for illegal activities, harassing others, or generating harmful content. We reserve the right to suspend accounts violating these terms.</p>
-
-          <h4 class="font-medium">4. Limitation of liability</h4>
-          <p>AiVA and its operators are not liable for indirect, special, or consequential damages arising from use of the service. Use at your own risk.</p>
-
-          <h4 class="font-medium">5. Changes</h4>
-          <p>We may update these Terms; continued use indicates acceptance of changes. For full legal compliance consult a lawyer.</p>
-
           <p class="text-xs text-[var(--muted)]">(This is a template. Replace with your organization's legally reviewed terms before production.)</p>
         </div>
         <div class="mt-4 text-right">
@@ -260,26 +327,11 @@
         </div>
         <div class="text-sm text-[var(--muted)] space-y-3">
           <p>AiVA respects your privacy. This policy describes what we collect, how we use it, and your rights.</p>
-
           <h4 class="font-medium">1. Data we collect</h4>
           <ul class="list-disc ml-5">
             <li>Account information: email, display name, profile picture (if using Google).</li>
             <li>Messages and conversation content submitted to the service for processing.</li>
-            <li>Usage metadata and device information (IP, browser, timestamps) to operate and secure the service.</li>
           </ul>
-
-          <h4 class="font-medium">2. How we use data</h4>
-          <p>We use data to provide and improve the service, respond to queries, detect abuse, and maintain integrity. Conversation content may be processed by third-party models/servers when you use certain features.</p>
-
-          <h4 class="font-medium">3. Sharing</h4>
-          <p>We do not sell personal data. We may share data with service providers who operate infrastructure, or when required by law.</p>
-
-          <h4 class="font-medium">4. Security</h4>
-          <p>We take reasonable measures to protect data, but no system is 100% secure. Keep account credentials private.</p>
-
-          <h4 class="font-medium">5. Children's policy</h4>
-          <p>Our service is not intended for children under 13. If you believe we have data about a child, contact us to request deletion.</p>
-
           <p class="text-xs text-[var(--muted)]">(This is a sample privacy policy. For production, use a privacy policy tailored to your jurisdiction and reviewed by counsel.)</p>
         </div>
         <div class="mt-4 text-right">
@@ -292,14 +344,14 @@
     <div id="comingModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
       <div class="w-full max-w-md bg-[var(--panel)] rounded p-5 text-center">
         <div class="text-lg font-semibold mb-2">Feature coming soon</div>
-        <div class="text-[var(--muted)] text-sm mb-4">Attachments and file parsing will be available in a future update. We'll show upload UI here when ready.</div>
+        <div class="text-[var(--muted)] text-sm mb-4">Attachments and file parsing will be available in a future update.</div>
         <div class="flex gap-2 justify-center">
           <button onclick="closeModal('comingModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">OK</button>
         </div>
       </div>
     </div>
 
-    <!-- CONTEXT MENU (unchanged) -->
+    <!-- CONTEXT MENU -->
     <div id="contextMenu" class="absolute z-50 hidden bg-[var(--panel)] border border-neutral-800 rounded shadow">
       <button id="ctxReply" class="block px-4 py-2 text-sm w-full text-left">Reply</button>
       <button id="ctxDelete" class="block px-4 py-2 text-sm w-full text-left">Delete for me</button>
@@ -310,7 +362,7 @@
 
   <script>
     /* ========== CONFIG - replace placeholders ========== */
-    const SERVER_BASE = "https://YOUR_RENDER_BACKEND_URL"; // e.g. https://your-app.onrender.com
+    const SERVER_BASE = "https://YOUR_RENDER_BACKEND_URL"; // update this
     const FIREBASE_CONFIG = {
       apiKey: "YOUR_FIREBASE_API_KEY",
       authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
@@ -318,11 +370,18 @@
     };
     /* ================================================== */
 
+    // show top warning if SERVER_BASE left as placeholder
+    document.addEventListener('DOMContentLoaded', ()=> {
+      if (SERVER_BASE.includes('YOUR_RENDER_BACKEND_URL')) {
+        document.getElementById('topWarning').classList.remove('hidden');
+      }
+    });
+
     // Initialize Firebase
     firebase.initializeApp(FIREBASE_CONFIG);
     const auth = firebase.auth();
 
-    // UI refs (shortened for clarity)
+    // UI refs
     const sidebar = document.getElementById('sidebar');
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobilePreviewToggle = document.getElementById('mobilePreviewToggle');
@@ -356,7 +415,6 @@
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     const searchInput = document.getElementById('searchInput');
-    const quickBtns = document.querySelectorAll('.quick-btn');
     const previewInner = document.getElementById('previewInner');
 
     const showCodeBtn = document.getElementById('showCodeBtn');
@@ -371,16 +429,53 @@
 
     const comingModal = document.getElementById('comingModal');
 
-    // AUTH small state
+    const logoBtn = document.getElementById('logoBtn');
+
+    // settings refs
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettings = document.getElementById('closeSettings');
+    const saveSettings = document.getElementById('saveSettings');
+    const modelSelect = document.getElementById('modelSelect');
+    const maxMessagesInput = document.getElementById('maxMessages');
+    const autoSave = document.getElementById('autoSave');
+    const sendVerifyBtn = document.getElementById('sendVerifyBtn');
+    const changePassBtn = document.getElementById('changePassBtn');
+    const logoutSettings = document.getElementById('logoutSettings');
+    const settingsUserEmail = document.getElementById('settingsUserEmail');
+
+    // change pass modal
+    const changePassModal = document.getElementById('changePassModal');
+    const doChangePass = document.getElementById('doChangePass');
+    const currentPass = document.getElementById('currentPass');
+    const newPass = document.getElementById('newPass');
+    const changePassError = document.getElementById('changePassError');
+
+    // forgot password
+    const forgotPassBtn = document.getElementById('forgotPassBtn');
+    const forgotNotice = document.getElementById('forgotNotice');
+
+    // other
+    const logoImg = document.getElementById('logoImg');
+    const aboutModal = document.getElementById('aboutModal');
+
+    // state
     let currentUser = null;
     let conversations = [];
     let activeConversationId = null;
     let pollHandle = null;
     let replyTo = null;
-    let settings = { model: 'openai/gpt-3.5-turbo', maxMessages: 20, autoSave: true };
+    let settings = { model: modelSelect.value, maxMessages: Number(maxMessagesInput.value), autoSave: autoSave.checked };
+    let currentMessages = []; // messages currently displayed for active conversation
+    let contextTargetMsgId = null;
 
+    // helpers
     function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
     function closeModal(id){ document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+
+    function el(tag, cls=''){ const d = document.createElement(tag); if(cls) d.className = cls; return d; }
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function truncate(s, n=120){ if(!s) return ''; return s.length>n ? s.slice(0,n)+'...' : s; }
 
     // Mobile menu
     mobileMenuBtn && mobileMenuBtn.addEventListener('click', ()=>{
@@ -390,15 +485,18 @@
       if (rightPanel.classList.contains('hidden')) rightPanel.classList.remove('hidden'); else rightPanel.classList.add('hidden');
     });
 
+    // Logo click -> about modal
+    logoBtn && logoBtn.addEventListener('click', ()=> openModal('aboutModal'));
+
     // AUTH overlay controls (separate screens)
     function showSignIn(){ authTitle.textContent = 'Sign in'; signInPanel.classList.remove('hidden'); signUpPanel.classList.add('hidden'); authOverlay.classList.remove('hidden'); authOverlay.classList.add('flex'); }
     function showSignUp(){ authTitle.textContent = 'Create account'; signInPanel.classList.add('hidden'); signUpPanel.classList.remove('hidden'); authOverlay.classList.remove('hidden'); authOverlay.classList.add('flex'); }
 
-    gotoSignIn.addEventListener('click', showSignIn);
-    gotoSignUp.addEventListener('click', showSignUp);
+    gotoSignIn && gotoSignIn.addEventListener('click', showSignIn);
+    gotoSignUp && gotoSignUp.addEventListener('click', showSignUp);
     gotoSignUp2 && gotoSignUp2.addEventListener('click', showSignUp);
     gotoSignIn2 && gotoSignIn2.addEventListener('click', showSignIn);
-    closeAuth.addEventListener('click', ()=> authOverlay.classList.add('hidden'));
+    closeAuth && closeAuth.addEventListener('click', ()=> authOverlay.classList.add('hidden'));
 
     // TERMS / PRIVACY
     termsLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('termsModal'); });
@@ -411,12 +509,12 @@
 
     // Quick previews
     showCodeBtn && showCodeBtn.addEventListener('click', ()=>{
-      previewInner.innerHTML = `<div class=\"text-sm text-[var(--muted)]\">Code playground — paste code in chat with triple backticks.</div>
-                                <pre><code class=\"language-javascript\">console.log('Hello AiVA');</code></pre>`;
+      previewInner.innerHTML = `<div class="text-sm text-[var(--muted)]">Code playground — paste code in chat with triple backticks.</div>
+                                <pre><code class="language-javascript">console.log('Hello AiVA');</code></pre>`;
       Prism.highlightAll();
     });
 
-    // SIMPLE AUTH (Firebase) behaviors
+    // SIMPLE AUTH (Firebase) behaviors with email verify / forgot / change pass
     const signinEmail = document.getElementById('signinEmail');
     const signinPassword = document.getElementById('signinPassword');
     const signupEmail = document.getElementById('signupEmail');
@@ -426,37 +524,105 @@
     const authErrorSign = document.getElementById('authErrorSign');
 
     signinBtn && signinBtn.addEventListener('click', async ()=>{
-      if (!signinEmail.value || !signinPassword.value){ authError.textContent = 'Enter email & password'; return; }
       authError.textContent = '';
-      try { await auth.signInWithEmailAndPassword(signinEmail.value.trim(), signinPassword.value); closeAuth.classList.contains && authOverlay.classList.add('hidden'); }
-      catch(e){ authError.textContent = e.message; }
+      if (!signinEmail.value || !signinPassword.value){ authError.textContent = 'Enter email & password'; return; }
+      try {
+        await auth.signInWithEmailAndPassword(signinEmail.value.trim(), signinPassword.value);
+        authOverlay.classList.add('hidden');
+      } catch(e){
+        authError.textContent = e.message;
+      }
     });
 
     signupBtn && signupBtn.addEventListener('click', async ()=>{
+      authErrorSign.textContent = '';
       if (!signupEmail.value || !signupPassword.value){ authErrorSign.textContent = 'Enter email & password'; return; }
       if (!acceptTerms.checked){ authErrorSign.textContent = 'Please accept Terms & Privacy'; return; }
-      authErrorSign.textContent = '';
-      try { await auth.createUserWithEmailAndPassword(signupEmail.value.trim(), signupPassword.value); authOverlay.classList.add('hidden'); }
-      catch(e){ authErrorSign.textContent = e.message; }
+      try {
+        const res = await auth.createUserWithEmailAndPassword(signupEmail.value.trim(), signupPassword.value);
+        if (res.user) {
+          try { await res.user.sendEmailVerification(); } catch(e){ console.debug('verify send failed', e); }
+        }
+        authOverlay.classList.add('hidden');
+      } catch(e){
+        authErrorSign.textContent = e.message;
+      }
+    });
+
+    // forgot password
+    forgotPassBtn && forgotPassBtn.addEventListener('click', async ()=>{
+      const email = signinEmail.value.trim();
+      if (!email) { authError.textContent = 'Enter your email above then click Forgot password'; return; }
+      try {
+        await auth.sendPasswordResetEmail(email);
+        openModal('forgotNotice');
+      } catch(e){
+        authError.textContent = e.message;
+      }
     });
 
     googleBtn && googleBtn.addEventListener('click', async ()=>{
-      if (!confirm('Sign in with Google?')) return; // simple confirmation for demo
       const provider = new firebase.auth.GoogleAuthProvider();
-      try { await auth.signInWithPopup(provider); }
+      try { await auth.signInWithPopup(provider); authOverlay.classList.add('hidden'); }
       catch(e){ alert(e.message); }
     });
 
     logoutBtn && logoutBtn.addEventListener('click', ()=> auth.signOut());
+    logoutSettings && logoutSettings.addEventListener('click', ()=> auth.signOut());
 
+    // settings modal
+    settingsBtn && settingsBtn.addEventListener('click', ()=> openModal('settingsModal'));
+    closeSettings && closeSettings.addEventListener('click', ()=> closeModal('settingsModal'));
+    saveSettings && saveSettings.addEventListener('click', ()=>{
+      settings.model = modelSelect.value;
+      settings.maxMessages = Number(maxMessagesInput.value);
+      settings.autoSave = autoSave.checked;
+      closeModal('settingsModal');
+    });
+
+    // send verification from settings
+    sendVerifyBtn && sendVerifyBtn.addEventListener('click', async ()=>{
+      if (!currentUser) return alert('Not signed in');
+      try { await currentUser.sendEmailVerification(); alert('Verification email sent'); }
+      catch(e){ alert('Send failed: ' + e.message); }
+    });
+
+    // change password flow
+    changePassBtn && changePassBtn.addEventListener('click', ()=> openModal('changePassModal'));
+    doChangePass && doChangePass.addEventListener('click', async ()=>{
+      changePassError.textContent = '';
+      if (!currentUser) { changePassError.textContent = 'Not signed in'; return; }
+      const oldP = currentPass.value; const newP = newPass.value;
+      if (!oldP || !newP) { changePassError.textContent = 'Enter current and new password'; return; }
+      try {
+        // reauthenticate
+        const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, oldP);
+        await currentUser.reauthenticateWithCredential(cred);
+        await currentUser.updatePassword(newP);
+        closeModal('changePassModal');
+        alert('Password changed');
+      } catch(e){
+        // common error: require-recent-login
+        changePassError.textContent = e.message;
+      }
+    });
+
+    // profile open
+    document.getElementById('openProfileBtn') && document.getElementById('openProfileBtn').addEventListener('click', ()=> openModal('settingsModal'));
+
+    // auth state changes
     auth.onAuthStateChanged(async user => {
       currentUser = user;
       if (user){
         signedOutSidebar.classList.add('hidden');
         signedInSidebar.classList.remove('hidden');
-        userNameEl.textContent = user.displayName || 'You';
-        userEmailEl.textContent = user.email;
+        userNameEl.textContent = user.displayName || (user.email || 'You');
+        userEmailEl.textContent = user.email || '';
+        settingsUserEmail.textContent = user.email || '';
         if (user.photoURL){ userPicEl.src = user.photoURL; userPicEl.classList.remove('hidden'); }
+        // hide auth overlay if open
+        authOverlay.classList.add('hidden');
+        // load conversations
         await loadConversations();
       } else {
         signedOutSidebar.classList.remove('hidden');
@@ -464,11 +630,14 @@
         conversationsEl.innerHTML = '';
         messagesEl.innerHTML = '';
         activeConversationId = null;
+        currentMessages = [];
         if (pollHandle) clearInterval(pollHandle);
+        // show sign in overlay on site load when not logged in
+        openModal('authOverlay');
       }
     });
 
-    // Conversations + messages (kept minimal; server required)
+    // Conversations + messages (server required)
     async function loadConversations(){
       if (!currentUser) return;
       try {
@@ -482,13 +651,13 @@
 
     function renderConversationList(){
       conversationsEl.innerHTML = '';
-      const q = searchInput.value.trim().toLowerCase();
+      const q = (searchInput.value || '').trim().toLowerCase();
       (conversations || []).filter(c => !q || (c.title||'').toLowerCase().includes(q) || (c.lastMessage||'').toLowerCase().includes(q))
         .forEach(c=>{
-          const row = document.createElement('div'); row.className = 'p-3 rounded hover:bg-[#08171b] cursor-pointer';
+          const row = el('div','p-3 rounded hover:bg-[#08171b] cursor-pointer');
           if (c.id === activeConversationId) row.classList.add('bg-[#071f23]');
-          row.innerHTML = `<div class=\"flex justify-between\"><div class=\"font-medium\">${escapeHtml(c.title||'Untitled')}</div><div class=\"text-xs text-[var(--muted)]\">${new Date(c.updatedAt||c.createdAt||Date.now()).toLocaleString()}</div></div>
-                           <div class=\"text-sm text-[var(--muted)] mt-1\">${escapeHtml(truncate(c.lastMessage||'No messages yet', 60))}</div>`;
+          row.innerHTML = `<div class="flex justify-between"><div class="font-medium">${escapeHtml(c.title||'Untitled')}</div><div class="text-xs text-[var(--muted)]">${new Date(c.updatedAt||c.createdAt||Date.now()).toLocaleString()}</div></div>
+                           <div class="text-sm text-[var(--muted)] mt-1">${escapeHtml(truncate(c.lastMessage||'No messages yet', 60))}</div>`;
           row.addEventListener('click', ()=> openConversation(c.id));
           conversationsEl.appendChild(row);
         });
@@ -498,95 +667,258 @@
     newConvBtnTop && newConvBtnTop.addEventListener('click', createConversation);
 
     async function createConversation(){
-      if (!currentUser) return;
+      if (!currentUser) return alert('Sign in first');
       try{
         const token = await currentUser.getIdToken();
         const res = await fetch(`${SERVER_BASE}/api/conversations`, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type':'application/json' }, body: JSON.stringify({ title: 'New Conversation' }) });
-        if (!res.ok) throw new Error('Create conversation failed');
+        if (!res.ok){ const txt = await res.text(); throw new Error(txt || 'Create conversation failed'); }
         const conv = await res.json();
         await loadConversations();
         openConversation(conv.id);
-      } catch(e){ console.debug(e); }
+      } catch(e){ alert('Create conversation failed: ' + (e.message || 'server error')); }
     }
 
-    async function openConversation(convId){ activeConversationId = convId; renderConversationList(); await loadMessages(convId); document.getElementById('activeConvTitle').textContent = (conversations.find(c=>c.id===convId)||{}).title || 'Conversation'; if (pollHandle) clearInterval(pollHandle); pollHandle = setInterval(()=> pollUpdates(convId), 4000); }
+    async function openConversation(convId){
+      activeConversationId = convId;
+      renderConversationList();
+      await loadMessages(convId);
+      document.getElementById('activeConvTitle').textContent = (conversations.find(c=>c.id===convId)||{}).title || 'Conversation';
+      if (pollHandle) clearInterval(pollHandle);
+      pollHandle = setInterval(()=> pollUpdates(convId), 4000);
+    }
 
-    async function loadMessages(convId){ if (!currentUser || !convId) return; try{ const token = await currentUser.getIdToken(); const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages`, { headers: { Authorization: 'Bearer ' + token } }); if (!res.ok) throw new Error('Failed to load messages'); const msgs = await res.json(); renderMessages(msgs); } catch(e){ console.debug(e); } }
+    async function loadMessages(convId){
+      if (!currentUser || !convId) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages`, { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok){ const txt = await res.text(); throw new Error(txt || 'Failed to load messages'); }
+        const msgs = await res.json();
+        currentMessages = msgs || [];
+        renderMessages(msgs);
+      } catch (e){
+        console.debug(e);
+        // if server not configured, inform user
+        if (SERVER_BASE.includes('YOUR_RENDER_BACKEND_URL')) {
+          appendLocalAssistantMessage('Backend not configured. Set SERVER_BASE in the code to your backend URL.');
+        }
+      }
+    }
 
-    function renderMessages(messages){ messagesEl.innerHTML = ''; for (const m of messages || []){
-      const wrapper = document.createElement('div'); wrapper.className = 'flex'; wrapper.style.flexDirection = (m.role==='user') ? 'row-reverse' : 'row';
-      const bubble = document.createElement('div'); bubble.className = 'p-3 rounded-lg max-w-[80%] break-words';
-      bubble.classList.add(m.role === 'user' ? 'bg-[var(--accent)] text-black' : 'bg-[#07181c] text-[var(--muted)]');
+    function renderMessages(messages){
+      messagesEl.innerHTML = '';
+      currentMessages = messages || [];
+      for (const m of currentMessages){
+        const wrapper = el('div','flex');
+        wrapper.style.flexDirection = (m.role === 'user') ? 'row-reverse' : 'row';
+        const bubble = el('div','p-3 rounded-lg max-w-[80%] break-words');
+        bubble.classList.add(m.role === 'user' ? 'bg-[var(--accent)] text-black' : 'bg-[#07181c] text-[var(--muted)]');
 
-      if (m.replyTo){ const rp = document.createElement('div'); rp.className = 'text-xs mb-2 rounded px-2 py-1 bg-[#041016]'; rp.innerHTML = `<strong class=\"text-[var(--accent)]\">${escapeHtml(m.replyTo.author)}</strong>: ${escapeHtml(truncate(m.replyTo.text,80))}`; bubble.appendChild(rp); }
+        if (m.replyTo) {
+          const rp = el('div','text-xs mb-2 rounded px-2 py-1 bg-[#041016]');
+          rp.innerHTML = `<strong class="text-[var(--accent)]">${escapeHtml(m.replyTo.author)}</strong>: ${escapeHtml(truncate(m.replyTo.text,80))}`;
+          bubble.appendChild(rp);
+        }
 
-      if (m.text && m.text.trim().startsWith('```')){
-        const code = m.text.replace(/^\s*```[a-z]*\n?/, '').replace(/\n?```$/, '');
-        const pre = document.createElement('pre'); const codeEl = document.createElement('code'); codeEl.className = 'language-javascript'; codeEl.textContent = code; pre.appendChild(codeEl); bubble.appendChild(pre); setTimeout(()=>Prism.highlightElement(codeEl),30);
-      } else {
-        const div = document.createElement('div'); div.innerHTML = escapeHtml(m.text || ''); bubble.appendChild(div);
+        if (m.text && m.text.trim().startsWith('```')) {
+          const code = m.text.replace(/^\s*```[a-z]*\n?/, '').replace(/\n?```$/, '');
+          const pre = el('pre'); const codeEl = el('code','language-javascript');
+          codeEl.textContent = code;
+          pre.appendChild(codeEl); bubble.appendChild(pre);
+          setTimeout(()=> Prism.highlightElement(codeEl), 30);
+        } else {
+          bubble.innerHTML += `<div>${escapeHtml(m.text || '')}</div>`;
+        }
+
+        const footer = el('div','text-[var(--muted)] text-xs mt-2 flex gap-2 items-center');
+        footer.innerHTML = `<span>${new Date(m.createdAt||Date.now()).toLocaleTimeString()}</span>
+                            <button data-id="${m.id}" class="replyBtn text-[var(--muted)] text-xs">Reply</button>
+                            <button data-id="${m.id}" class="menuBtn text-[var(--muted)] text-xs">⋯</button>`;
+        bubble.appendChild(footer);
+
+        wrapper.appendChild(bubble);
+        messagesEl.appendChild(wrapper);
       }
 
-      const footer = document.createElement('div'); footer.className = 'text-[var(--muted)] text-xs mt-2 flex gap-2 items-center'; footer.innerHTML = `<span>${new Date(m.createdAt||Date.now()).toLocaleTimeString()}</span> <button data-id=\"${m.id}\" class=\"replyBtn text-[var(--muted)] text-xs\">Reply</button> <button data-id=\"${m.id}\" class=\"menuBtn text-[var(--muted)] text-xs\">⋯</button>`;
-      bubble.appendChild(footer);
-      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
-    }
+      // attach delegate events
+      messagesEl.querySelectorAll('.replyBtn').forEach(btn=>{
+        btn.onclick = (e)=> {
+          const id = btn.dataset.id;
+          const msg = currentMessages.find(x=>String(x.id)===String(id));
+          if (msg){ setReply(msg); }
+        };
+      });
+      messagesEl.querySelectorAll('.menuBtn').forEach(btn=>{
+        btn.onclick = (e)=> {
+          const id = btn.dataset.id;
+          showContextMenu(e.pageX, e.pageY, id);
+        };
+      });
 
-      // attach events
-      messagesEl.querySelectorAll('.replyBtn').forEach(btn=> btn.onclick = ()=> { const id = btn.dataset.id; const msg = (messages||[]).find(x=>String(x.id)===String(id)); if (msg) setReply(msg); });
-      messagesEl.querySelectorAll('.menuBtn').forEach(btn=> btn.onclick = (e)=> showContextMenu(e.pageX, e.pageY, btn.dataset.id));
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    function setReply(msg){ replyTo = { id: msg.id, text: msg.text, author: msg.role==='user' ? 'You' : 'AiVA' }; document.getElementById('replyAuthor').textContent = replyTo.author; document.getElementById('replyText').textContent = truncate(replyTo.text,200); document.getElementById('replyPreview').classList.remove('hidden'); }
-    document.getElementById('cancelReply') && document.getElementById('cancelReply').addEventListener('click', ()=>{ replyTo = null; document.getElementById('replyPreview').classList.add('hidden'); });
+    // Reply
+    function setReply(msg){
+      replyTo = { id: msg.id, text: msg.text, author: msg.role === 'user' ? 'You' : 'AiVA' };
+      document.getElementById('replyAuthor').textContent = replyTo.author;
+      document.getElementById('replyText').textContent = truncate(replyTo.text, 200);
+      document.getElementById('replyPreview').classList.remove('hidden');
+    }
+    document.getElementById('cancelReply') && document.getElementById('cancelReply').addEventListener('click', ()=> { replyTo = null; document.getElementById('replyPreview').classList.add('hidden'); });
 
-    // Send message (optimistic)
+    // Send message (optimistic) with maxMessages check, and backend error info
     sendBtn && sendBtn.addEventListener('click', async ()=>{
-      const text = messageInput.value.trim(); if (!text || !activeConversationId || !currentUser) return; appendLocalMessage(text); messageInput.value = ''; document.getElementById('replyPreview').classList.add('hidden');
-      try{
-        const token = await currentUser.getIdToken(); document.getElementById('typingIndicator').classList.remove('hidden');
+      const text = (messageInput.value || '').trim();
+      if (!text) return;
+      if (!currentUser) { alert('Sign in required'); openModal('authOverlay'); return; }
+      if (!activeConversationId) { alert('Open or create a conversation first'); return; }
+
+      // enforce message limit
+      const maxAllowed = Number(maxMessagesInput.value) || 20;
+      if ((currentMessages || []).length >= maxAllowed) {
+        alert(`This conversation has reached the maximum of ${maxAllowed} messages. Start a new conversation.`);
+        return;
+      }
+
+      // optimistic UI
+      appendLocalMessage(text);
+      messageInput.value = '';
+      document.getElementById('replyPreview').classList.add('hidden');
+
+      try {
+        const token = await currentUser.getIdToken();
+        document.getElementById('typingIndicator').classList.remove('hidden');
         const payload = { conversationId: activeConversationId, text, replyTo: replyTo ? replyTo.id : null, settings };
-        const res = await fetch(`${SERVER_BASE}/api/chat`, { method: 'POST', headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token }, body: JSON.stringify(payload) });
+        // basic sanity check for backend placeholder
+        if (SERVER_BASE.includes('YOUR_RENDER_BACKEND_URL')) {
+          throw new Error('Backend not configured (SERVER_BASE placeholder). Update SERVER_BASE in code.');
+        }
+        const res = await fetch(`${SERVER_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
         document.getElementById('typingIndicator').classList.add('hidden');
-        if (!res.ok){ const txt = await res.text(); throw new Error(txt || 'server error'); }
-        await loadMessages(activeConversationId); await loadConversations();
-      } catch(e){ document.getElementById('typingIndicator').classList.add('hidden'); appendLocalAssistantMessage('Error: ' + (e.message || 'Failed')); console.debug(e); }
-      finally { replyTo = null; }
+        if (!res.ok) {
+          const txt = await res.text().catch(()=>null);
+          // detect likely missing API key or backend auth issue
+          if (res.status === 401 || res.status === 403 || (txt && txt.toLowerCase().includes('api key'))) {
+            appendLocalAssistantMessage('Server rejected the request — likely the backend is missing an API key or credentials. Check your server configuration.');
+          } else {
+            appendLocalAssistantMessage('Server error: ' + (txt || res.statusText || 'unknown'));
+          }
+          throw new Error(txt || 'server error');
+        }
+        const json = await res.json();
+        // after successful send, reload messages
+        await loadMessages(activeConversationId);
+        await loadConversations();
+      } catch (e) {
+        document.getElementById('typingIndicator').classList.add('hidden');
+        // if earlier optimistic append exists, keep it; show assistant error bubble
+        appendLocalAssistantMessage('Error: ' + (e.message || 'Failed to send'));
+        console.debug(e);
+      } finally {
+        replyTo = null;
+      }
     });
 
-    function appendLocalMessage(text){ const wrapper = document.createElement('div'); wrapper.className='flex'; wrapper.style.flexDirection='row-reverse'; const bubble = document.createElement('div'); bubble.className='p-3 rounded-lg max-w-[80%] bg-[var(--accent)] text-black'; bubble.textContent = text; wrapper.appendChild(bubble); messagesEl.appendChild(wrapper); messagesEl.scrollTop = messagesEl.scrollHeight; }
-    function appendLocalAssistantMessage(text){ const wrapper = document.createElement('div'); wrapper.className='flex'; wrapper.style.flexDirection='row'; const bubble = document.createElement('div'); bubble.className='p-3 rounded-lg max-w-[80%] bg-[#07181c] text-[var(--muted)]'; bubble.textContent = text; wrapper.appendChild(bubble); messagesEl.appendChild(wrapper); messagesEl.scrollTop = messagesEl.scrollHeight; }
+    function appendLocalMessage(text){
+      const wrapper = el('div','flex'); wrapper.style.flexDirection = 'row-reverse';
+      const bubble = el('div','p-3 rounded-lg max-w-[80%] bg-[var(--accent)] text-black');
+      bubble.textContent = text;
+      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function appendLocalAssistantMessage(text){
+      const wrapper = el('div','flex'); wrapper.style.flexDirection = 'row';
+      const bubble = el('div','p-3 rounded-lg max-w-[80%] bg-[#07181c] text-[var(--muted)]');
+      bubble.textContent = text;
+      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
 
     // Poll updates
-    async function pollUpdates(convId){ if (!currentUser || !convId) return; try{ const token = await currentUser.getIdToken(); const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages?since=${Date.now()-5000}`, { headers: { Authorization: 'Bearer ' + token } }); if (!res.ok) return; const updates = await res.json(); if (updates && updates.length){ await loadMessages(convId); await loadConversations(); } } catch(e){ console.debug('poll error', e); } }
+    async function pollUpdates(convId){
+      if (!currentUser || !convId) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages?since=${Date.now()-5000}`, {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!res.ok) return;
+        const updates = await res.json();
+        if (updates && updates.length) {
+          await loadMessages(convId);
+          await loadConversations();
+        }
+      } catch(e){ console.debug('poll error', e); }
+    }
 
-    // Context menu (kept same)
-    const contextMenu = document.getElementById('contextMenu'); let contextTargetMsgId = null;
-    function showContextMenu(x,y,msgId){ contextTargetMsgId = msgId; contextMenu.style.left = x + 'px'; contextMenu.style.top = y + 'px'; contextMenu.classList.remove('hidden'); }
+    // Context menu
+    const contextMenu = document.getElementById('contextMenu');
+    function showContextMenu(x,y,msgId){
+      contextTargetMsgId = msgId;
+      contextMenu.style.left = x + 'px';
+      contextMenu.style.top = y + 'px';
+      contextMenu.classList.remove('hidden');
+    }
     document.addEventListener('click', ()=> contextMenu.classList.add('hidden'));
 
-    document.getElementById('ctxReply') && document.getElementById('ctxReply').addEventListener('click', async ()=>{ if (!contextTargetMsgId) return; const token = await currentUser.getIdToken(); const res = await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, { headers: { Authorization: 'Bearer ' + token } }).catch(()=>null); if (res && res.ok){ const msg = await res.json(); setReply(msg); } });
+    document.getElementById('ctxReply') && document.getElementById('ctxReply').addEventListener('click', async ()=>{
+      if (!contextTargetMsgId) return;
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, { headers: { Authorization: 'Bearer ' + token } }).catch(()=>null);
+      if (res && res.ok){
+        const msg = await res.json();
+        setReply(msg);
+      }
+    });
 
-    document.getElementById('ctxDelete') && document.getElementById('ctxDelete').addEventListener('click', async ()=>{ if (!contextTargetMsgId) return; try{ const token = await currentUser.getIdToken(); await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }); await loadMessages(activeConversationId); } catch(e){ console.debug(e); } });
+    document.getElementById('ctxDelete') && document.getElementById('ctxDelete').addEventListener('click', async ()=>{
+      if (!contextTargetMsgId) return;
+      try {
+        const token = await currentUser.getIdToken();
+        await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+        await loadMessages(activeConversationId);
+      } catch(e){ console.debug(e); }
+    });
 
-    document.getElementById('ctxDeleteAll') && document.getElementById('ctxDeleteAll').addEventListener('click', async ()=>{ if (!contextTargetMsgId) return; try{ const token = await currentUser.getIdToken(); await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}?forEveryone=1`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }); await loadMessages(activeConversationId); } catch(e){ console.debug(e); } });
+    document.getElementById('ctxDeleteAll') && document.getElementById('ctxDeleteAll').addEventListener('click', async ()=>{
+      if (!contextTargetMsgId) return;
+      try {
+        const token = await currentUser.getIdToken();
+        await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}?forEveryone=1`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+        await loadMessages(activeConversationId);
+      } catch(e){ console.debug(e); }
+    });
 
-    // helper utilities
-    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    // utilities
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function truncate(s,n=120){ if(!s) return ''; return s.length>n ? s.slice(0,n)+'...' : s; }
 
-    // keep keyboard send
+    // keyboard send
     messageInput && messageInput.addEventListener('keydown', (e)=> { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
 
     // search
     searchInput && searchInput.addEventListener('input', ()=> renderConversationList());
 
     // page visibility
-    document.addEventListener('visibilitychange', ()=> { if (document.hidden) { if (pollHandle) clearInterval(pollHandle); } else if (activeConversationId) pollHandle = setInterval(()=> pollUpdates(activeConversationId), 4000); });
+    document.addEventListener('visibilitychange', ()=> {
+      if (document.hidden) { if (pollHandle) clearInterval(pollHandle); }
+      else if (activeConversationId) pollHandle = setInterval(()=> pollUpdates(activeConversationId), 4000);
+    });
 
-    // initial behaviour: open sign in overlay if no user
-    // (the overlay will be automatically shown when user clicks Sign in/Sign up from sidebar)
+    // initial behaviour: show auth overlay if not logged in
+    window.addEventListener('load', async ()=> {
+      if (!auth.currentUser) {
+        openModal('authOverlay');
+      } else {
+        // if already signed in, hide overlay
+        authOverlay.classList.add('hidden');
+      }
+    });
   </script>
 </body>
 </html>
