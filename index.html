@@ -8,7 +8,7 @@
   <!-- Tailwind CSS (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Local Balsamiq Sans font (place fonts/BalsamiqSans-Regular.ttf in repo) -->
+  <!-- Local Balsamiq Sans font (optional) -->
   <style>
     @font-face {
       font-family: 'Balsamiq Sans';
@@ -27,15 +27,14 @@
     }
     html,body,#app{height:100%}
     body { font-family: 'Balsamiq Sans', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,var(--bg),#041018); color: #e6eef3; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-    /* small helper for code blocks */
     pre { background:#07141a; padding:12px; border-radius:8px; overflow:auto; }
   </style>
 
-  <!-- Prism.js for code highlighting -->
+  <!-- Prism.js (for code blocks in preview) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 
-  <!-- Chart.js -->
+  <!-- Chart.js (kept for future use) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Firebase (compat) -->
@@ -45,203 +44,270 @@
   <meta name="description" content="AiVA — Claude-style AI Virtual Assistant (frontend). Replace placeholders for SERVER_BASE and Firebase config.">
 </head>
 <body>
-  <div id="app" class="h-full flex">
-    <!-- SIDEBAR -->
-    <aside class="w-80 bg-[rgba(6,12,14,0.95)] border-r border-neutral-800 p-4 flex flex-col gap-4">
+  <div id="app" class="min-h-screen flex flex-col">
+
+    <!-- TOPBAR (mobile) -->
+    <header class="sm:hidden flex items-center justify-between px-4 py-3 bg-[var(--panel)] border-b border-neutral-800">
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-teal-400 flex items-center justify-center text-xl">🤖</div>
-        <div>
-          <div class="text-2xl font-semibold tracking-tight">AiVA</div>
-          <div class="text-xs text-[var(--muted)]">AI Virtual Assistant</div>
-        </div>
+        <button id="mobileMenuBtn" class="p-2 rounded-md bg-white/5">☰</button>
+        <div class="text-lg font-semibold">AiVA</div>
       </div>
-
-      <!-- AUTH -->
-      <div id="authArea" class="space-y-3">
-        <div id="signedOut">
-          <input id="email" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Email" type="email" />
-          <input id="password" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Password" type="password" />
-          <div class="flex items-center gap-2">
-            <input id="acceptTerms" type="checkbox" class="accent-[var(--accent)]" />
-            <label for="acceptTerms" class="text-xs text-[var(--muted)]">I accept <a id="termsLink" href="#" class="text-[var(--accent)] underline">Terms</a> & <a id="privacyLink" href="#" class="text-[var(--accent)] underline">Privacy</a></label>
-          </div>
-          <div class="flex gap-2">
-            <button id="signupBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Sign up</button>
-            <button id="signinBtn" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Sign in</button>
-          </div>
-          <button id="googleBtn" class="w-full py-2 rounded bg-white/10 text-sm">Sign in with Google</button>
-          <div id="authError" class="text-xs text-red-400 mt-1"></div>
-        </div>
-
-        <div id="signedIn" class="hidden">
-          <div class="flex items-center gap-3">
-            <img id="userPic" src="" alt="avatar" class="w-10 h-10 rounded-full object-cover hidden">
-            <div>
-              <div id="userName" class="font-medium"></div>
-              <div id="userEmail" class="text-xs text-[var(--muted)]"></div>
-            </div>
-          </div>
-          <div class="mt-3 flex gap-2">
-            <button id="newConvBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">New Chat</button>
-            <button id="logoutBtn" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Logout</button>
-          </div>
-        </div>
+      <div class="flex items-center gap-2">
+        <button id="mobilePreviewToggle" class="p-2 rounded-md bg-white/5">Preview</button>
       </div>
+    </header>
 
-      <!-- SEARCH -->
-      <input id="searchInput" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Search conversations..." />
-
-      <!-- CONVERSATIONS -->
-      <div id="conversations" class="flex-1 overflow-auto space-y-2 py-2">
-        <!-- conversation items injected -->
-      </div>
-
-      <!-- QUICK PROMPTS -->
-      <div class="text-xs text-[var(--muted)]">
-        <div class="mb-2">Quick prompts</div>
-        <div class="flex flex-col gap-2">
-          <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Explain like I'm five</button>
-          <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Summarize this text</button>
-          <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Generate code snippet</button>
-        </div>
-      </div>
-    </aside>
-
-    <!-- MAIN -->
-    <main class="flex-1 flex flex-col">
-      <!-- HEADER -->
-      <div class="px-6 py-4 border-b border-neutral-800 flex items-center justify-between bg-[var(--panel)]">
-        <div class="flex items-center gap-4">
+    <div class="flex flex-1">
+      <!-- SIDEBAR -->
+      <aside id="sidebar" class="hidden sm:flex sm:w-72 lg:w-80 bg-[rgba(6,12,14,0.95)] border-r border-neutral-800 p-4 flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-teal-400 flex items-center justify-center text-xl">🤖</div>
           <div>
-            <div class="text-xl font-semibold">AiVA</div>
+            <div class="text-2xl font-semibold tracking-tight">AiVA</div>
             <div class="text-xs text-[var(--muted)]">AI Virtual Assistant</div>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <button id="settingsBtn" class="px-3 py-1 rounded border border-neutral-700 text-[var(--muted)] text-sm">Settings</button>
-        </div>
-      </div>
 
-      <!-- LAYOUT -->
-      <div class="flex-1 p-6 gap-6 flex">
-        <!-- MESSAGES -->
-        <section class="flex-1 flex flex-col">
-          <div id="chatHeader" class="flex items-center gap-4 mb-3">
-            <div id="activeConvTitle" class="text-lg font-semibold">Select or start a conversation</div>
-            <div id="typingIndicator" class="text-sm text-[var(--accent)] hidden">AiVA is typing…</div>
-          </div>
-
-          <div id="messages" class="flex-1 p-4 rounded-lg bg-[var(--card)] overflow-auto space-y-3">
-            <!-- messages appended here -->
-          </div>
-
-          <!-- Reply preview -->
-          <div id="replyPreview" class="hidden mt-2 bg-[#0f1f22] border-l-4 border-[var(--accent2)] px-3 py-2 rounded">
-            <div class="flex justify-between items-center text-sm text-[var(--muted)]">
-              <div id="replyMeta">Replying to <strong id="replyAuthor"></strong></div>
-              <button id="cancelReply" class="text-xs text-[var(--muted)]">×</button>
-            </div>
-            <div id="replyText" class="text-sm mt-1 text-[#dbe7ea]"></div>
-          </div>
-
-          <div class="mt-4 flex items-center gap-3">
-            <textarea id="messageInput" rows="2" class="flex-1 px-3 py-2 rounded bg-[#07141a] border border-neutral-800 resize-none" placeholder="Ask AiVA anything... (English)"></textarea>
-            <div class="flex flex-col gap-2">
-              <button id="sendBtn" class="px-4 py-2 rounded bg-[var(--accent)] text-black font-semibold">Send</button>
-              <button id="attachBtn" class="px-4 py-2 rounded border border-neutral-700 text-[var(--muted)]">Attach</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- RIGHT TOOLS -->
-        <aside class="w-96 flex flex-col gap-4">
-          <div class="rounded-lg bg-[var(--card)] p-4">
-            <div class="font-semibold mb-2">Tools</div>
-            <div class="flex flex-col gap-2">
-              <button id="showCodeBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Code Playground</button>
-              <button id="showDocsBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Documents</button>
-              <button id="showChartBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Insert Chart</button>
+        <!-- AUTH (compact in sidebar for desktop) -->
+        <div id="authAreaSidebar" class="space-y-3">
+          <div id="signedOutSidebar">
+            <div class="text-sm text-[var(--muted)]">Welcome — please sign in or create an account</div>
+            <div class="flex gap-2 mt-2">
+              <button id="gotoSignIn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Sign in</button>
+              <button id="gotoSignUp" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Sign up</button>
             </div>
           </div>
 
-          <div id="previewPanel" class="rounded-lg bg-[var(--card)] p-4 flex-1 overflow-auto">
-            <div id="previewInner" class="text-[var(--muted)] text-sm">Preview / Code / Charts will appear here</div>
+          <div id="signedInSidebar" class="hidden">
+            <div class="flex items-center gap-3">
+              <img id="userPic" src="" alt="avatar" class="w-10 h-10 rounded-full object-cover hidden">
+              <div>
+                <div id="userName" class="font-medium"></div>
+                <div id="userEmail" class="text-xs text-[var(--muted)]"></div>
+              </div>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button id="newConvBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">New Chat</button>
+              <button id="logoutBtn" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Logout</button>
+            </div>
           </div>
-        </aside>
-      </div>
-    </main>
-  </div>
+        </div>
 
-  <!-- SETTINGS MODAL -->
-  <div id="settingsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60">
-    <div class="w-[700px] bg-[var(--panel)] rounded p-5">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold">Settings</h3>
-        <button id="closeSettings" class="text-[var(--muted)]">✕</button>
-      </div>
-      <div class="space-y-3 text-[var(--muted)]">
-        <div>
-          <label class="block text-sm mb-1">Model (proxy)</label>
-          <select id="modelSelect" class="w-full bg-[#07141a] px-3 py-2 rounded border border-neutral-800">
-            <option value="openai/gpt-3.5-turbo">gpt-3.5-turbo</option>
-            <option value="openai/gpt-4o-mini">gpt-4o-mini</option>
-            <option value="openai/gpt-oss-120b:together" selected>gpt-oss-120b:together</option>
-          </select>
+        <!-- SEARCH -->
+        <input id="searchInput" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Search conversations..." />
+
+        <!-- CONVERSATIONS -->
+        <div id="conversations" class="flex-1 overflow-auto space-y-2 py-2"></div>
+
+        <!-- QUICK PROMPTS -->
+        <div class="text-xs text-[var(--muted)]">
+          <div class="mb-2">Quick prompts</div>
+          <div class="flex flex-col gap-2">
+            <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Explain like I'm five</button>
+            <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Summarize this text</button>
+            <button class="quick-btn py-2 px-3 text-left rounded bg-[#07141a] hover:bg-[#0b2b31] text-sm">Generate code snippet</button>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm mb-1">Context size (messages)</label>
-          <input id="maxMessages" type="number" min="3" max="200" value="20" class="w-full bg-[#07141a] px-3 py-2 rounded border border-neutral-800" />
+      </aside>
+
+      <!-- MAIN -->
+      <main class="flex-1 flex flex-col">
+        <!-- HEADER (desktop) -->
+        <div class="hidden sm:flex px-6 py-4 border-b border-neutral-800 items-center justify-between bg-[var(--panel)]">
+          <div class="flex items-center gap-4">
+            <div>
+              <div class="text-xl font-semibold">AiVA</div>
+              <div class="text-xs text-[var(--muted)]">Claude-style UI — cleaner and responsive</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="settingsBtn" class="px-3 py-1 rounded border border-neutral-700 text-[var(--muted)] text-sm">Settings</button>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm mb-1">Auto-save conversation</label>
-          <input id="autoSave" type="checkbox" class="accent-[var(--accent)]" checked />
+
+        <!-- LAYOUT -->
+        <div class="flex-1 p-4 md:p-6 gap-4 flex flex-col md:flex-row">
+          <!-- MESSAGES -->
+          <section class="flex-1 flex flex-col min-h-0">
+            <div id="chatHeader" class="flex items-center gap-4 mb-3">
+              <div class="flex-1">
+                <div id="activeConvTitle" class="text-lg font-semibold">Select or start a conversation</div>
+                <div id="typingIndicator" class="text-sm text-[var(--accent)] hidden">AiVA is typing…</div>
+              </div>
+              <div class="hidden sm:flex items-center gap-2">
+                <button id="attachBtnTop" class="px-3 py-1 rounded border border-neutral-700 text-sm">Attach</button>
+                <button id="newConvBtnTop" class="px-3 py-1 rounded bg-[var(--accent)] text-black text-sm">New Chat</button>
+              </div>
+            </div>
+
+            <div id="messages" class="flex-1 p-4 rounded-lg bg-[var(--card)] overflow-auto space-y-3 min-h-[200px]"></div>
+
+            <!-- Reply preview -->
+            <div id="replyPreview" class="hidden mt-2 bg-[#0f1f22] border-l-4 border-[var(--accent2)] px-3 py-2 rounded">
+              <div class="flex justify-between items-center text-sm text-[var(--muted)]">
+                <div id="replyMeta">Replying to <strong id="replyAuthor"></strong></div>
+                <button id="cancelReply" class="text-xs text-[var(--muted)]">×</button>
+              </div>
+              <div id="replyText" class="text-sm mt-1 text-[#dbe7ea]"></div>
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+              <textarea id="messageInput" rows="2" class="flex-1 px-3 py-2 rounded bg-[#07141a] border border-neutral-800 resize-none" placeholder="Ask AiVA anything... (English)"></textarea>
+              <div class="flex flex-col gap-2">
+                <button id="sendBtn" class="px-4 py-2 rounded bg-[var(--accent)] text-black font-semibold">Send</button>
+                <button id="attachBtn" class="px-4 py-2 rounded border border-neutral-700 text-[var(--muted)]">Attach</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- RIGHT TOOLS (hidden on small screens, toggled via mobilePreviewToggle) -->
+          <aside id="rightPanel" class="hidden md:flex md:w-96 lg:w-80 flex-col gap-4">
+            <div class="rounded-lg bg-[var(--card)] p-4">
+              <div class="font-semibold mb-2">Tools</div>
+              <div class="flex flex-col gap-2">
+                <button id="showCodeBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Code Playground</button>
+                <!-- keep only useful tools; other advanced features are intentionally hidden until implemented -->
+              </div>
+            </div>
+
+            <div id="previewPanel" class="rounded-lg bg-[var(--card)] p-4 flex-1 overflow-auto">
+              <div id="previewInner" class="text-[var(--muted)] text-sm">Preview / Code will appear here. Attachments are a placeholder — click Attach to see status.</div>
+            </div>
+          </aside>
         </div>
-        <div class="flex justify-end">
-          <button id="saveSettings" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Save</button>
+
+      </main>
+    </div>
+
+    <!-- AUTH FULLSCREEN PANELS (separate Sign in & Sign up screens as requested) -->
+    <div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 hidden">
+      <div class="w-full max-w-2xl mx-4 bg-[var(--panel)] rounded-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 id="authTitle" class="text-xl font-semibold">Sign in</h2>
+          <button id="closeAuth" class="text-[var(--muted)]">✕</button>
+        </div>
+
+        <div id="signInPanel">
+          <div class="space-y-3">
+            <input id="signinEmail" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Email" type="email" />
+            <input id="signinPassword" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Password" type="password" />
+            <div class="flex gap-2">
+              <button id="signinBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Sign in</button>
+              <button id="gotoSignUp2" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Create account</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="googleBtn" class="w-full py-2 rounded bg-white/10 text-sm">Sign in with Google</button>
+            </div>
+            <div id="authError" class="text-xs text-red-400 mt-1"></div>
+          </div>
+        </div>
+
+        <div id="signUpPanel" class="hidden">
+          <div class="space-y-3">
+            <input id="signupEmail" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Email" type="email" />
+            <input id="signupPassword" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Password" type="password" />
+            <div class="flex items-center gap-2">
+              <input id="acceptTerms" type="checkbox" class="accent-[var(--accent)]" />
+              <label for="acceptTerms" class="text-xs text-[var(--muted)]">I accept <a id="termsLink" href="#" class="text-[var(--accent)] underline">Terms</a> & <a id="privacyLink" href="#" class="text-[var(--accent)] underline">Privacy</a></label>
+            </div>
+            <div class="flex gap-2">
+              <button id="signupBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Create account</button>
+              <button id="gotoSignIn2" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Already have an account</button>
+            </div>
+            <div id="authErrorSign" class="text-xs text-red-400 mt-1"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- TERMS & PRIVACY -->
-  <div id="termsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60">
-    <div class="w-3/4 max-w-2xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold">Terms & Conditions</h3>
-        <button onclick="closeModal('termsModal')" class="text-[var(--muted)]">✕</button>
-      </div>
-      <div class="text-sm text-[var(--muted)]">
-        <p>Placeholder Terms & Conditions. Replace with your legal text before production.</p>
-      </div>
-      <div class="mt-4 text-right">
-        <button onclick="closeModal('termsModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button>
+    <!-- TERMS & PRIVACY MODALS (with more detailed placeholder content + disclaimer) -->
+    <div id="termsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-40">
+      <div class="w-11/12 max-w-3xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-lg font-semibold">Terms & Conditions</h3>
+          <button onclick="closeModal('termsModal')" class="text-[var(--muted)]">✕</button>
+        </div>
+        <div class="text-sm text-[var(--muted)] space-y-3">
+          <p>Welcome to AiVA. By using our service you agree to these Terms & Conditions. Please read carefully.</p>
+          <h4 class="font-medium">1. Service</h4>
+          <p>AiVA is a conversational AI assistant intended for informational and productivity uses. We may provide automated responses generated by models; these are not guaranteed to be accurate and should not be relied upon for professional advice.</p>
+
+          <h4 class="font-medium">2. Accounts</h4>
+          <p>Users must provide accurate information. You are responsible for activity under your account and must keep credentials secure.</p>
+
+          <h4 class="font-medium">3. Acceptable use</h4>
+          <p>Do not use the service for illegal activities, harassing others, or generating harmful content. We reserve the right to suspend accounts violating these terms.</p>
+
+          <h4 class="font-medium">4. Limitation of liability</h4>
+          <p>AiVA and its operators are not liable for indirect, special, or consequential damages arising from use of the service. Use at your own risk.</p>
+
+          <h4 class="font-medium">5. Changes</h4>
+          <p>We may update these Terms; continued use indicates acceptance of changes. For full legal compliance consult a lawyer.</p>
+
+          <p class="text-xs text-[var(--muted)]">(This is a template. Replace with your organization's legally reviewed terms before production.)</p>
+        </div>
+        <div class="mt-4 text-right">
+          <button onclick="closeModal('termsModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="privacyModal" class="fixed inset-0 hidden items-center justify-center bg-black/60">
-    <div class="w-3/4 max-w-2xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold">Privacy Policy</h3>
-        <button onclick="closeModal('privacyModal')" class="text-[var(--muted)]">✕</button>
-      </div>
-      <div class="text-sm text-[var(--muted)]">
-        <p>Placeholder Privacy Policy. Replace with your legal text before production.</p>
-      </div>
-      <div class="mt-4 text-right">
-        <button onclick="closeModal('privacyModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button>
+    <div id="privacyModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-40">
+      <div class="w-11/12 max-w-3xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-lg font-semibold">Privacy Policy</h3>
+          <button onclick="closeModal('privacyModal')" class="text-[var(--muted)]">✕</button>
+        </div>
+        <div class="text-sm text-[var(--muted)] space-y-3">
+          <p>AiVA respects your privacy. This policy describes what we collect, how we use it, and your rights.</p>
+
+          <h4 class="font-medium">1. Data we collect</h4>
+          <ul class="list-disc ml-5">
+            <li>Account information: email, display name, profile picture (if using Google).</li>
+            <li>Messages and conversation content submitted to the service for processing.</li>
+            <li>Usage metadata and device information (IP, browser, timestamps) to operate and secure the service.</li>
+          </ul>
+
+          <h4 class="font-medium">2. How we use data</h4>
+          <p>We use data to provide and improve the service, respond to queries, detect abuse, and maintain integrity. Conversation content may be processed by third-party models/servers when you use certain features.</p>
+
+          <h4 class="font-medium">3. Sharing</h4>
+          <p>We do not sell personal data. We may share data with service providers who operate infrastructure, or when required by law.</p>
+
+          <h4 class="font-medium">4. Security</h4>
+          <p>We take reasonable measures to protect data, but no system is 100% secure. Keep account credentials private.</p>
+
+          <h4 class="font-medium">5. Children's policy</h4>
+          <p>Our service is not intended for children under 13. If you believe we have data about a child, contact us to request deletion.</p>
+
+          <p class="text-xs text-[var(--muted)]">(This is a sample privacy policy. For production, use a privacy policy tailored to your jurisdiction and reviewed by counsel.)</p>
+        </div>
+        <div class="mt-4 text-right">
+          <button onclick="closeModal('privacyModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button>
+        </div>
       </div>
     </div>
+
+    <!-- ATTACHMENT / COMING SOON MODAL -->
+    <div id="comingModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
+      <div class="w-full max-w-md bg-[var(--panel)] rounded p-5 text-center">
+        <div class="text-lg font-semibold mb-2">Feature coming soon</div>
+        <div class="text-[var(--muted)] text-sm mb-4">Attachments and file parsing will be available in a future update. We'll show upload UI here when ready.</div>
+        <div class="flex gap-2 justify-center">
+          <button onclick="closeModal('comingModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTEXT MENU (unchanged) -->
+    <div id="contextMenu" class="absolute z-50 hidden bg-[var(--panel)] border border-neutral-800 rounded shadow">
+      <button id="ctxReply" class="block px-4 py-2 text-sm w-full text-left">Reply</button>
+      <button id="ctxDelete" class="block px-4 py-2 text-sm w-full text-left">Delete for me</button>
+      <button id="ctxDeleteAll" class="block px-4 py-2 text-sm w-full text-left">Delete for everyone</button>
+    </div>
+
   </div>
 
-  <!-- CONTEXT MENU -->
-  <div id="contextMenu" class="absolute z-50 hidden bg-[var(--panel)] border border-neutral-800 rounded shadow">
-    <button id="ctxReply" class="block px-4 py-2 text-sm w-full text-left">Reply</button>
-    <button id="ctxDelete" class="block px-4 py-2 text-sm w-full text-left">Delete for me</button>
-    <button id="ctxDeleteAll" class="block px-4 py-2 text-sm w-full text-left">Delete for everyone</button>
-  </div>
-
-  <!-- SCRIPT -->
   <script>
     /* ========== CONFIG - replace placeholders ========== */
     const SERVER_BASE = "https://YOUR_RENDER_BACKEND_URL"; // e.g. https://your-app.onrender.com
@@ -249,7 +315,6 @@
       apiKey: "YOUR_FIREBASE_API_KEY",
       authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
       projectId: "YOUR_FIREBASE_PROJECT_ID",
-      // ... other firebase config if available
     };
     /* ================================================== */
 
@@ -257,19 +322,34 @@
     firebase.initializeApp(FIREBASE_CONFIG);
     const auth = firebase.auth();
 
-    // UI refs
-    const signedOutEl = document.getElementById('signedOut');
-    const signedInEl = document.getElementById('signedIn');
-    const authError = document.getElementById('authError');
-    const signupBtn = document.getElementById('signupBtn');
+    // UI refs (shortened for clarity)
+    const sidebar = document.getElementById('sidebar');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobilePreviewToggle = document.getElementById('mobilePreviewToggle');
+    const rightPanel = document.getElementById('rightPanel');
+
+    const gotoSignIn = document.getElementById('gotoSignIn');
+    const gotoSignUp = document.getElementById('gotoSignUp');
+    const gotoSignUp2 = document.getElementById('gotoSignUp2');
+    const gotoSignIn2 = document.getElementById('gotoSignIn2');
+    const authOverlay = document.getElementById('authOverlay');
+    const closeAuth = document.getElementById('closeAuth');
+    const signInPanel = document.getElementById('signInPanel');
+    const signUpPanel = document.getElementById('signUpPanel');
+    const authTitle = document.getElementById('authTitle');
+
     const signinBtn = document.getElementById('signinBtn');
+    const signupBtn = document.getElementById('signupBtn');
     const googleBtn = document.getElementById('googleBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const newConvBtn = document.getElementById('newConvBtn');
+    const newConvBtnTop = document.getElementById('newConvBtnTop');
+
+    const signedOutSidebar = document.getElementById('signedOutSidebar');
+    const signedInSidebar = document.getElementById('signedInSidebar');
     const userNameEl = document.getElementById('userName');
     const userEmailEl = document.getElementById('userEmail');
     const userPicEl = document.getElementById('userPic');
-    const acceptTerms = document.getElementById('acceptTerms');
 
     const conversationsEl = document.getElementById('conversations');
     const messagesEl = document.getElementById('messages');
@@ -279,88 +359,108 @@
     const quickBtns = document.querySelectorAll('.quick-btn');
     const previewInner = document.getElementById('previewInner');
 
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
-    const closeSettings = document.getElementById('closeSettings');
-    const saveSettings = document.getElementById('saveSettings');
-    const modelSelect = document.getElementById('modelSelect');
-    const maxMessagesInput = document.getElementById('maxMessages');
-    const autoSave = document.getElementById('autoSave');
+    const showCodeBtn = document.getElementById('showCodeBtn');
+    const attachBtn = document.getElementById('attachBtn');
+    const attachBtnTop = document.getElementById('attachBtnTop');
 
     const termsLink = document.getElementById('termsLink');
     const privacyLink = document.getElementById('privacyLink');
 
-    const replyPreview = document.getElementById('replyPreview');
-    const replyAuthor = document.getElementById('replyAuthor');
-    const replyText = document.getElementById('replyText');
-    const cancelReplyBtn = document.getElementById('cancelReply');
+    const termsModal = document.getElementById('termsModal');
+    const privacyModal = document.getElementById('privacyModal');
 
-    const typingIndicator = document.getElementById('typingIndicator');
-    const activeConvTitle = document.getElementById('activeConvTitle');
+    const comingModal = document.getElementById('comingModal');
 
-    const contextMenu = document.getElementById('contextMenu');
-    const ctxReply = document.getElementById('ctxReply');
-    const ctxDelete = document.getElementById('ctxDelete');
-    const ctxDeleteAll = document.getElementById('ctxDeleteAll');
-
-    // State
+    // AUTH small state
     let currentUser = null;
-    let conversations = []; // array of {id, title, lastMessage, updatedAt}
+    let conversations = [];
     let activeConversationId = null;
     let pollHandle = null;
     let replyTo = null;
-    let messageDraft = '';
-    let settings = { model: modelSelect.value, maxMessages: Number(maxMessagesInput.value), autoSave: autoSave.checked };
-    let contextTargetMsgId = null;
+    let settings = { model: 'openai/gpt-3.5-turbo', maxMessages: 20, autoSave: true };
 
-    // Helpers
-    const el = (tag, cls='') => { const d = document.createElement(tag); if(cls) d.className = cls; return d; };
-    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function truncate(s, n=120){ if(!s) return ''; return s.length>n ? s.slice(0,n)+'...' : s; }
     function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
     function closeModal(id){ document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 
-    // AUTH
-    signupBtn.addEventListener('click', async ()=>{
+    // Mobile menu
+    mobileMenuBtn && mobileMenuBtn.addEventListener('click', ()=>{
+      if (sidebar.classList.contains('hidden')) sidebar.classList.remove('hidden'); else sidebar.classList.add('hidden');
+    });
+    mobilePreviewToggle && mobilePreviewToggle.addEventListener('click', ()=>{
+      if (rightPanel.classList.contains('hidden')) rightPanel.classList.remove('hidden'); else rightPanel.classList.add('hidden');
+    });
+
+    // AUTH overlay controls (separate screens)
+    function showSignIn(){ authTitle.textContent = 'Sign in'; signInPanel.classList.remove('hidden'); signUpPanel.classList.add('hidden'); authOverlay.classList.remove('hidden'); authOverlay.classList.add('flex'); }
+    function showSignUp(){ authTitle.textContent = 'Create account'; signInPanel.classList.add('hidden'); signUpPanel.classList.remove('hidden'); authOverlay.classList.remove('hidden'); authOverlay.classList.add('flex'); }
+
+    gotoSignIn.addEventListener('click', showSignIn);
+    gotoSignUp.addEventListener('click', showSignUp);
+    gotoSignUp2 && gotoSignUp2.addEventListener('click', showSignUp);
+    gotoSignIn2 && gotoSignIn2.addEventListener('click', showSignIn);
+    closeAuth.addEventListener('click', ()=> authOverlay.classList.add('hidden'));
+
+    // TERMS / PRIVACY
+    termsLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('termsModal'); });
+    privacyLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('privacyModal'); });
+
+    // Attach buttons -> show coming soon modal
+    function showComing(){ openModal('comingModal'); }
+    attachBtn && attachBtn.addEventListener('click', showComing);
+    attachBtnTop && attachBtnTop.addEventListener('click', showComing);
+
+    // Quick previews
+    showCodeBtn && showCodeBtn.addEventListener('click', ()=>{
+      previewInner.innerHTML = `<div class=\"text-sm text-[var(--muted)]\">Code playground — paste code in chat with triple backticks.</div>
+                                <pre><code class=\"language-javascript\">console.log('Hello AiVA');</code></pre>`;
+      Prism.highlightAll();
+    });
+
+    // SIMPLE AUTH (Firebase) behaviors
+    const signinEmail = document.getElementById('signinEmail');
+    const signinPassword = document.getElementById('signinPassword');
+    const signupEmail = document.getElementById('signupEmail');
+    const signupPassword = document.getElementById('signupPassword');
+    const acceptTerms = document.getElementById('acceptTerms');
+    const authError = document.getElementById('authError');
+    const authErrorSign = document.getElementById('authErrorSign');
+
+    signinBtn && signinBtn.addEventListener('click', async ()=>{
+      if (!signinEmail.value || !signinPassword.value){ authError.textContent = 'Enter email & password'; return; }
       authError.textContent = '';
-      if (!acceptTerms.checked){ authError.textContent = 'Accept Terms & Privacy'; return; }
-      const email = document.getElementById('email').value.trim();
-      const pwd = document.getElementById('password').value;
-      try { await auth.createUserWithEmailAndPassword(email, pwd); }
+      try { await auth.signInWithEmailAndPassword(signinEmail.value.trim(), signinPassword.value); closeAuth.classList.contains && authOverlay.classList.add('hidden'); }
       catch(e){ authError.textContent = e.message; }
     });
 
-    signinBtn.addEventListener('click', async ()=>{
-      authError.textContent = '';
-      if (!acceptTerms.checked){ authError.textContent = 'Accept Terms & Privacy'; return; }
-      const email = document.getElementById('email').value.trim();
-      const pwd = document.getElementById('password').value;
-      try { await auth.signInWithEmailAndPassword(email, pwd); }
-      catch(e){ authError.textContent = e.message; }
+    signupBtn && signupBtn.addEventListener('click', async ()=>{
+      if (!signupEmail.value || !signupPassword.value){ authErrorSign.textContent = 'Enter email & password'; return; }
+      if (!acceptTerms.checked){ authErrorSign.textContent = 'Please accept Terms & Privacy'; return; }
+      authErrorSign.textContent = '';
+      try { await auth.createUserWithEmailAndPassword(signupEmail.value.trim(), signupPassword.value); authOverlay.classList.add('hidden'); }
+      catch(e){ authErrorSign.textContent = e.message; }
     });
 
-    googleBtn.addEventListener('click', async ()=>{
-      authError.textContent = '';
-      if (!acceptTerms.checked){ authError.textContent = 'Accept Terms & Privacy'; return; }
+    googleBtn && googleBtn.addEventListener('click', async ()=>{
+      if (!confirm('Sign in with Google?')) return; // simple confirmation for demo
       const provider = new firebase.auth.GoogleAuthProvider();
       try { await auth.signInWithPopup(provider); }
-      catch(e){ authError.textContent = e.message; }
+      catch(e){ alert(e.message); }
     });
 
-    logoutBtn.addEventListener('click', ()=> { auth.signOut(); });
+    logoutBtn && logoutBtn.addEventListener('click', ()=> auth.signOut());
 
     auth.onAuthStateChanged(async user => {
       currentUser = user;
-      if (user) {
-        signedOutEl.classList.add('hidden');
-        signedInEl.classList.remove('hidden');
+      if (user){
+        signedOutSidebar.classList.add('hidden');
+        signedInSidebar.classList.remove('hidden');
         userNameEl.textContent = user.displayName || 'You';
         userEmailEl.textContent = user.email;
         if (user.photoURL){ userPicEl.src = user.photoURL; userPicEl.classList.remove('hidden'); }
         await loadConversations();
       } else {
-        signedOutEl.classList.remove('hidden');
-        signedInEl.classList.add('hidden');
+        signedOutSidebar.classList.remove('hidden');
+        signedInSidebar.classList.add('hidden');
         conversationsEl.innerHTML = '';
         messagesEl.innerHTML = '';
         activeConversationId = null;
@@ -368,7 +468,7 @@
       }
     });
 
-    // CONVERSATIONS API interactions (server must implement endpoints)
+    // Conversations + messages (kept minimal; server required)
     async function loadConversations(){
       if (!currentUser) return;
       try {
@@ -377,290 +477,116 @@
         if (!res.ok) throw new Error('Failed to load conversations');
         conversations = await res.json();
         renderConversationList();
-      } catch (e){ console.error(e); }
+      } catch (e){ console.debug(e); }
     }
 
     function renderConversationList(){
       conversationsEl.innerHTML = '';
       const q = searchInput.value.trim().toLowerCase();
-      conversations.filter(c => !q || (c.title||'').toLowerCase().includes(q) || (c.lastMessage||'').toLowerCase().includes(q))
+      (conversations || []).filter(c => !q || (c.title||'').toLowerCase().includes(q) || (c.lastMessage||'').toLowerCase().includes(q))
         .forEach(c=>{
-          const row = el('div','p-3 rounded hover:bg-[#08171b] cursor-pointer');
+          const row = document.createElement('div'); row.className = 'p-3 rounded hover:bg-[#08171b] cursor-pointer';
           if (c.id === activeConversationId) row.classList.add('bg-[#071f23]');
-          row.innerHTML = `<div class="flex justify-between"><div class="font-medium">${escapeHtml(c.title||'Untitled')}</div><div class="text-xs text-[var(--muted)]">${new Date(c.updatedAt||c.createdAt||Date.now()).toLocaleString()}</div></div>
-                           <div class="text-sm text-[var(--muted)] mt-1">${escapeHtml(truncate(c.lastMessage||'No messages yet', 60))}</div>`;
+          row.innerHTML = `<div class=\"flex justify-between\"><div class=\"font-medium\">${escapeHtml(c.title||'Untitled')}</div><div class=\"text-xs text-[var(--muted)]\">${new Date(c.updatedAt||c.createdAt||Date.now()).toLocaleString()}</div></div>
+                           <div class=\"text-sm text-[var(--muted)] mt-1\">${escapeHtml(truncate(c.lastMessage||'No messages yet', 60))}</div>`;
           row.addEventListener('click', ()=> openConversation(c.id));
           conversationsEl.appendChild(row);
         });
     }
 
-    // CREATE new conversation
-    newConvBtn.addEventListener('click', async ()=>{
+    newConvBtn && newConvBtn.addEventListener('click', createConversation);
+    newConvBtnTop && newConvBtnTop.addEventListener('click', createConversation);
+
+    async function createConversation(){
       if (!currentUser) return;
-      try {
+      try{
         const token = await currentUser.getIdToken();
-        const res = await fetch(`${SERVER_BASE}/api/conversations`, {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + token, 'Content-Type':'application/json' },
-          body: JSON.stringify({ title: 'New Conversation' })
-        });
+        const res = await fetch(`${SERVER_BASE}/api/conversations`, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type':'application/json' }, body: JSON.stringify({ title: 'New Conversation' }) });
         if (!res.ok) throw new Error('Create conversation failed');
         const conv = await res.json();
         await loadConversations();
         openConversation(conv.id);
-      } catch (e){ console.error(e); }
-    });
-
-    // OPEN conversation
-    async function openConversation(convId){
-      activeConversationId = convId;
-      renderConversationList();
-      await loadMessages(convId);
-      activeConvTitle.textContent = conversations.find(c=>c.id===convId)?.title || 'Conversation';
-      if (pollHandle) clearInterval(pollHandle);
-      pollHandle = setInterval(()=> pollUpdates(convId), 3000);
+      } catch(e){ console.debug(e); }
     }
 
-    // LOAD messages
-    async function loadMessages(convId){
-      if (!currentUser || !convId) return;
-      try {
-        const token = await currentUser.getIdToken();
-        const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages`, {
-          headers: { Authorization: 'Bearer ' + token }
-        });
-        if (!res.ok) throw new Error('Failed to load messages');
-        const messages = await res.json();
-        renderMessages(messages);
-      } catch (e){ console.error(e); }
-    }
+    async function openConversation(convId){ activeConversationId = convId; renderConversationList(); await loadMessages(convId); document.getElementById('activeConvTitle').textContent = (conversations.find(c=>c.id===convId)||{}).title || 'Conversation'; if (pollHandle) clearInterval(pollHandle); pollHandle = setInterval(()=> pollUpdates(convId), 4000); }
 
-    // RENDER messages with support for code blocks, charts, reply-> and meta
-    function renderMessages(messages){
-      messagesEl.innerHTML = '';
-      for (const m of messages){
-        const wrapper = el('div','flex');
-        wrapper.style.flexDirection = (m.role === 'user') ? 'row-reverse' : 'row';
-        const bubble = el('div','p-3 rounded-lg max-w-[80%] break-words');
-        bubble.classList.add(m.role === 'user' ? 'bg-[var(--accent)] text-black' : 'bg-[#07181c] text-[var(--muted)]');
+    async function loadMessages(convId){ if (!currentUser || !convId) return; try{ const token = await currentUser.getIdToken(); const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages`, { headers: { Authorization: 'Bearer ' + token } }); if (!res.ok) throw new Error('Failed to load messages'); const msgs = await res.json(); renderMessages(msgs); } catch(e){ console.debug(e); } }
 
-        // replyTo preview
-        if (m.replyTo) {
-          const rp = el('div','text-xs mb-2 rounded px-2 py-1 bg-[#041016]');
-          rp.innerHTML = `<strong class="text-[var(--accent)]">${escapeHtml(m.replyTo.author)}</strong>: ${escapeHtml(truncate(m.replyTo.text,80))}`;
-          bubble.appendChild(rp);
-        }
+    function renderMessages(messages){ messagesEl.innerHTML = ''; for (const m of messages || []){
+      const wrapper = document.createElement('div'); wrapper.className = 'flex'; wrapper.style.flexDirection = (m.role==='user') ? 'row-reverse' : 'row';
+      const bubble = document.createElement('div'); bubble.className = 'p-3 rounded-lg max-w-[80%] break-words';
+      bubble.classList.add(m.role === 'user' ? 'bg-[var(--accent)] text-black' : 'bg-[#07181c] text-[var(--muted)]');
 
-        // code block detection
-        if (m.text && m.text.trim().startsWith('```')) {
-          const code = m.text.replace(/^\s*```[a-z]*\n?/, '').replace(/\n?```$/, '');
-          const pre = el('pre'); const codeEl = el('code','language-javascript');
-          codeEl.textContent = code;
-          pre.appendChild(codeEl); bubble.appendChild(pre);
-          setTimeout(()=> Prism.highlightElement(codeEl), 30);
-        } else if (m.meta && m.meta.type === 'chart' && m.meta.data) {
-          const canvas = el('canvas'); canvas.width = 400; canvas.height = 220;
-          bubble.appendChild(canvas);
-          setTimeout(()=> {
-            try { new Chart(canvas.getContext('2d'), m.meta.data); } catch(e){ console.error(e); }
-          }, 30);
-        } else {
-          bubble.innerHTML += `<div>${escapeHtml(m.text || '')}</div>`;
-        }
+      if (m.replyTo){ const rp = document.createElement('div'); rp.className = 'text-xs mb-2 rounded px-2 py-1 bg-[#041016]'; rp.innerHTML = `<strong class=\"text-[var(--accent)]\">${escapeHtml(m.replyTo.author)}</strong>: ${escapeHtml(truncate(m.replyTo.text,80))}`; bubble.appendChild(rp); }
 
-        const footer = el('div','text-[var(--muted)] text-xs mt-2 flex gap-2 items-center');
-        footer.innerHTML = `<span>${new Date(m.createdAt||Date.now()).toLocaleTimeString()}</span>
-                            <button data-id="${m.id}" class="replyBtn text-[var(--muted)] text-xs">Reply</button>
-                            <button data-id="${m.id}" class="menuBtn text-[var(--muted)] text-xs">⋯</button>`;
-        bubble.appendChild(footer);
-
-        wrapper.appendChild(bubble);
-        messagesEl.appendChild(wrapper);
+      if (m.text && m.text.trim().startsWith('```')){
+        const code = m.text.replace(/^\s*```[a-z]*\n?/, '').replace(/\n?```$/, '');
+        const pre = document.createElement('pre'); const codeEl = document.createElement('code'); codeEl.className = 'language-javascript'; codeEl.textContent = code; pre.appendChild(codeEl); bubble.appendChild(pre); setTimeout(()=>Prism.highlightElement(codeEl),30);
+      } else {
+        const div = document.createElement('div'); div.innerHTML = escapeHtml(m.text || ''); bubble.appendChild(div);
       }
 
-      // attach delegate events
-      messagesEl.querySelectorAll('.replyBtn').forEach(btn=>{
-        btn.onclick = (e)=> {
-          const id = btn.dataset.id;
-          const msg = messages.find(x=>String(x.id)===String(id));
-          if (msg){ setReply(msg); }
-        };
-      });
-      messagesEl.querySelectorAll('.menuBtn').forEach(btn=>{
-        btn.onclick = (e)=> {
-          const id = btn.dataset.id;
-          showContextMenu(e.pageX, e.pageY, id);
-        };
-      });
+      const footer = document.createElement('div'); footer.className = 'text-[var(--muted)] text-xs mt-2 flex gap-2 items-center'; footer.innerHTML = `<span>${new Date(m.createdAt||Date.now()).toLocaleTimeString()}</span> <button data-id=\"${m.id}\" class=\"replyBtn text-[var(--muted)] text-xs\">Reply</button> <button data-id=\"${m.id}\" class=\"menuBtn text-[var(--muted)] text-xs\">⋯</button>`;
+      bubble.appendChild(footer);
+      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
+    }
 
+      // attach events
+      messagesEl.querySelectorAll('.replyBtn').forEach(btn=> btn.onclick = ()=> { const id = btn.dataset.id; const msg = (messages||[]).find(x=>String(x.id)===String(id)); if (msg) setReply(msg); });
+      messagesEl.querySelectorAll('.menuBtn').forEach(btn=> btn.onclick = (e)=> showContextMenu(e.pageX, e.pageY, btn.dataset.id));
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    // Reply handling
-    function setReply(msg){
-      replyTo = { id: msg.id, text: msg.text, author: msg.role === 'user' ? 'You' : 'AiVA' };
-      replyAuthor.textContent = replyTo.author;
-      replyText.textContent = truncate(replyTo.text, 200);
-      replyPreview.classList.remove('hidden');
-    }
-    cancelReplyBtn.addEventListener('click', ()=> { replyTo = null; replyPreview.classList.add('hidden'); });
+    function setReply(msg){ replyTo = { id: msg.id, text: msg.text, author: msg.role==='user' ? 'You' : 'AiVA' }; document.getElementById('replyAuthor').textContent = replyTo.author; document.getElementById('replyText').textContent = truncate(replyTo.text,200); document.getElementById('replyPreview').classList.remove('hidden'); }
+    document.getElementById('cancelReply') && document.getElementById('cancelReply').addEventListener('click', ()=>{ replyTo = null; document.getElementById('replyPreview').classList.add('hidden'); });
 
-    // SEND message (calls backend which does context aggregation and model call)
-    sendBtn.addEventListener('click', async ()=>{
-      const text = messageInput.value.trim();
-      if (!text || !activeConversationId || !currentUser) return;
-      // optimistic UI
-      appendLocalMessage(text);
-      messageInput.value = '';
-      replyPreview.classList.add('hidden');
-      try {
-        const token = await currentUser.getIdToken();
-        typingIndicator.classList.remove('hidden');
+    // Send message (optimistic)
+    sendBtn && sendBtn.addEventListener('click', async ()=>{
+      const text = messageInput.value.trim(); if (!text || !activeConversationId || !currentUser) return; appendLocalMessage(text); messageInput.value = ''; document.getElementById('replyPreview').classList.add('hidden');
+      try{
+        const token = await currentUser.getIdToken(); document.getElementById('typingIndicator').classList.remove('hidden');
         const payload = { conversationId: activeConversationId, text, replyTo: replyTo ? replyTo.id : null, settings };
-        const res = await fetch(`${SERVER_BASE}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
-          body: JSON.stringify(payload)
-        });
-        typingIndicator.classList.add('hidden');
+        const res = await fetch(`${SERVER_BASE}/api/chat`, { method: 'POST', headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token }, body: JSON.stringify(payload) });
+        document.getElementById('typingIndicator').classList.add('hidden');
         if (!res.ok){ const txt = await res.text(); throw new Error(txt || 'server error'); }
-        const json = await res.json();
-        // server returns { reply, saved: true }
-        await loadMessages(activeConversationId);
-        await loadConversations();
-      } catch (e) {
-        typingIndicator.classList.add('hidden');
-        appendLocalAssistantMessage('Error: ' + (e.message || 'Failed'));
-        console.error(e);
-      } finally {
-        replyTo = null;
-      }
+        await loadMessages(activeConversationId); await loadConversations();
+      } catch(e){ document.getElementById('typingIndicator').classList.add('hidden'); appendLocalAssistantMessage('Error: ' + (e.message || 'Failed')); console.debug(e); }
+      finally { replyTo = null; }
     });
 
-    function appendLocalMessage(text){
-      const wrapper = el('div','flex'); wrapper.style.flexDirection = 'row-reverse';
-      const bubble = el('div','p-3 rounded-lg max-w-[80%] bg-[var(--accent)] text-black');
-      bubble.textContent = text;
-      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-    function appendLocalAssistantMessage(text){
-      const wrapper = el('div','flex'); wrapper.style.flexDirection = 'row';
-      const bubble = el('div','p-3 rounded-lg max-w-[80%] bg-[#07181c] text-[var(--muted)]');
-      bubble.textContent = text;
-      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+    function appendLocalMessage(text){ const wrapper = document.createElement('div'); wrapper.className='flex'; wrapper.style.flexDirection='row-reverse'; const bubble = document.createElement('div'); bubble.className='p-3 rounded-lg max-w-[80%] bg-[var(--accent)] text-black'; bubble.textContent = text; wrapper.appendChild(bubble); messagesEl.appendChild(wrapper); messagesEl.scrollTop = messagesEl.scrollHeight; }
+    function appendLocalAssistantMessage(text){ const wrapper = document.createElement('div'); wrapper.className='flex'; wrapper.style.flexDirection='row'; const bubble = document.createElement('div'); bubble.className='p-3 rounded-lg max-w-[80%] bg-[#07181c] text-[var(--muted)]'; bubble.textContent = text; wrapper.appendChild(bubble); messagesEl.appendChild(wrapper); messagesEl.scrollTop = messagesEl.scrollHeight; }
 
-    // Poll updates (background-worker friendly)
-    async function pollUpdates(convId){
-      if (!currentUser || !convId) return;
-      try {
-        const token = await currentUser.getIdToken();
-        const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages?since=${Date.now()-5000}`, {
-          headers: { Authorization: 'Bearer ' + token }
-        });
-        if (!res.ok) return;
-        const updates = await res.json();
-        if (updates && updates.length) {
-          await loadMessages(convId);
-          await loadConversations();
-        }
-      } catch(e){ console.debug('poll error', e); }
-    }
+    // Poll updates
+    async function pollUpdates(convId){ if (!currentUser || !convId) return; try{ const token = await currentUser.getIdToken(); const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages?since=${Date.now()-5000}`, { headers: { Authorization: 'Bearer ' + token } }); if (!res.ok) return; const updates = await res.json(); if (updates && updates.length){ await loadMessages(convId); await loadConversations(); } } catch(e){ console.debug('poll error', e); } }
 
-    // Context menu
-    function showContextMenu(x,y,msgId){
-      contextTargetMsgId = msgId;
-      contextMenu.style.left = x + 'px';
-      contextMenu.style.top = y + 'px';
-      contextMenu.classList.remove('hidden');
-    }
+    // Context menu (kept same)
+    const contextMenu = document.getElementById('contextMenu'); let contextTargetMsgId = null;
+    function showContextMenu(x,y,msgId){ contextTargetMsgId = msgId; contextMenu.style.left = x + 'px'; contextMenu.style.top = y + 'px'; contextMenu.classList.remove('hidden'); }
     document.addEventListener('click', ()=> contextMenu.classList.add('hidden'));
 
-    ctxReply.addEventListener('click', async ()=>{
-      if (!contextTargetMsgId) return;
-      // fetch message (server endpoint available) - simplified: set reply locally
-      const token = await currentUser.getIdToken();
-      const res = await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, {
-        headers: { Authorization: 'Bearer ' + token }
-      }).catch(()=>null);
-      if (res && res.ok){
-        const msg = await res.json();
-        setReply(msg);
-      }
-    });
+    document.getElementById('ctxReply') && document.getElementById('ctxReply').addEventListener('click', async ()=>{ if (!contextTargetMsgId) return; const token = await currentUser.getIdToken(); const res = await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, { headers: { Authorization: 'Bearer ' + token } }).catch(()=>null); if (res && res.ok){ const msg = await res.json(); setReply(msg); } });
 
-    ctxDelete.addEventListener('click', async ()=>{
-      if (!contextTargetMsgId) return;
-      try {
-        const token = await currentUser.getIdToken();
-        await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, {
-          method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
-        });
-        await loadMessages(activeConversationId);
-      } catch(e){ console.error(e); }
-    });
+    document.getElementById('ctxDelete') && document.getElementById('ctxDelete').addEventListener('click', async ()=>{ if (!contextTargetMsgId) return; try{ const token = await currentUser.getIdToken(); await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }); await loadMessages(activeConversationId); } catch(e){ console.debug(e); } });
 
-    ctxDeleteAll.addEventListener('click', async ()=>{
-      if (!contextTargetMsgId) return;
-      try {
-        const token = await currentUser.getIdToken();
-        await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}?forEveryone=1`, {
-          method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
-        });
-        await loadMessages(activeConversationId);
-      } catch(e){ console.error(e); }
-    });
+    document.getElementById('ctxDeleteAll') && document.getElementById('ctxDeleteAll').addEventListener('click', async ()=>{ if (!contextTargetMsgId) return; try{ const token = await currentUser.getIdToken(); await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}?forEveryone=1`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }); await loadMessages(activeConversationId); } catch(e){ console.debug(e); } });
 
-    // Quick prompts
-    quickBtns.forEach(b => b.addEventListener('click', ()=> { messageInput.value = b.textContent; messageInput.focus(); }));
+    // helper utilities
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function truncate(s,n=120){ if(!s) return ''; return s.length>n ? s.slice(0,n)+'...' : s; }
 
-    // Preview tools
-    document.getElementById('showCodeBtn').addEventListener('click', ()=> {
-      previewInner.innerHTML = `<div class="text-sm text-[var(--muted)]">Code playground — paste code in chat with triple backticks.</div>
-                                <pre><code class="language-javascript">console.log('Hello AiVA');</code></pre>`;
-      Prism.highlightAll();
-    });
-    document.getElementById('showDocsBtn').addEventListener('click', ()=> {
-      previewInner.innerHTML = `<div class="text-sm text-[var(--muted)]">Documents — upload & parse via server (requires backend).</div>`;
-    });
-    document.getElementById('showChartBtn').addEventListener('click', ()=> {
-      previewInner.innerHTML = `<canvas id="previewChart" width="350" height="220"></canvas>`;
-      setTimeout(()=> {
-        const ctx = document.getElementById('previewChart').getContext('2d');
-        new Chart(ctx, { type:'bar', data:{ labels:['A','B','C'], datasets:[{label:'Example', data:[12,19,7]}] } });
-      }, 40);
-    });
+    // keep keyboard send
+    messageInput && messageInput.addEventListener('keydown', (e)=> { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
 
-    // Settings modal
-    settingsBtn.addEventListener('click', ()=> openModal('settingsModal'));
-    closeSettings.addEventListener('click', ()=> closeModal('settingsModal'));
-    saveSettings.addEventListener('click', ()=>{
-      settings.model = modelSelect.value;
-      settings.maxMessages = Number(maxMessagesInput.value);
-      settings.autoSave = autoSave.checked;
-      closeModal('settingsModal');
-    });
+    // search
+    searchInput && searchInput.addEventListener('input', ()=> renderConversationList());
 
-    // Terms/privacy links
-    termsLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('termsModal'); });
-    privacyLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('privacyModal'); });
-    window.closeModal = closeModal;
+    // page visibility
+    document.addEventListener('visibilitychange', ()=> { if (document.hidden) { if (pollHandle) clearInterval(pollHandle); } else if (activeConversationId) pollHandle = setInterval(()=> pollUpdates(activeConversationId), 4000); });
 
-    // keyboard send
-    messageInput.addEventListener('keydown', (e)=> { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
-
-    // search filtering
-    searchInput.addEventListener('input', ()=> renderConversationList());
-
-    // page visibility: manage polling
-    document.addEventListener('visibilitychange', ()=> {
-      if (document.hidden) { if (pollHandle) clearInterval(pollHandle); }
-      else if (activeConversationId) pollHandle = setInterval(()=> pollUpdates(activeConversationId), 3000);
-    });
-
-    // initial no-op
+    // initial behaviour: open sign in overlay if no user
+    // (the overlay will be automatically shown when user clicks Sign in/Sign up from sidebar)
   </script>
 </body>
 </html>
