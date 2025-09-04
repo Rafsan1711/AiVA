@@ -1,325 +1,529 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dot & Box — Play vs AI</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AiVA — AI Virtual Assistant</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+
   <style>
-    /* Simple dark Claude-like UI — keep minimal */
-    body{font-family:Arial,sans-serif;background:#0f1720;color:#e6eef6;margin:0;padding:28px;display:flex;justify-content:center}
-    .card{width:820px;background:linear-gradient(180deg,#071024,#091227);padding:18px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
-    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-    header h1{margin:0;font-size:18px}
-    .main{display:flex;gap:18px}
-    #game-board{display:grid;gap:6px;margin-top:10px}
-    .dot{width:12px;height:12px;border-radius:50%;background:#e6eef6}
-    .line{background:#2b3440;cursor:pointer;border-radius:6px;transition:transform .06s}
-    .line.horizontal{height:8px;width:64px}
-    .line.vertical{width:8px;height:64px}
-    .line.active{background:#444;cursor:default;opacity:0.9}
-    .box{width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:transparent}
-    .player-1{background:linear-gradient(180deg, rgba(47,110,255,0.14), rgba(47,110,255,0.08));color:#cfe0ff;font-weight:700}
-    .player-2{background:linear-gradient(180deg, rgba(255,91,127,0.12), rgba(255,91,127,0.06));color:#ffe6ec;font-weight:700}
-    #status{padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);text-align:center;margin-bottom:6px;font-weight:700}
-    #restart{margin-top:8px;padding:8px 10px;border-radius:8px;background:#111827;border:none;color:#e6eef6;cursor:pointer}
-    /* Thinking overlay */
-    #thinking-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:999}
-    #thinking-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
-    .dotpulse{width:9px;height:9px;border-radius:50%;background:#9aa4b2;animation:throb 1s infinite}
-    .dotpulse:nth-child(2){animation-delay:.12s}.dotpulse:nth-child(3){animation-delay:.24s}
-    @keyframes throb{0%{transform:translateY(0);opacity:.6}50%{transform:translateY(-6px);opacity:1}100%{transform:translateY(0);opacity:.6}
+    /* Balsamiq Sans font (place fonts/BalsamiqSans-Regular.ttf in repo) */
+    @font-face {
+      font-family: 'Balsamiq Sans';
+      src: url('fonts/BalsamiqSans-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+    :root{
+      --bg:#0b0f12;
+      --panel:#0f1418;
+      --muted:#9fb0b8;
+      --accent:#66e0a8;
+      --accent-2:#3ecf8e;
+      --card:#0f171b;
+      --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;padding:0;background:var(--bg);color:#e6f6ef;font-family:'Balsamiq Sans',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    .app{display:flex;height:100vh;overflow:hidden;}
+
+    /* SIDEBAR */
+    .sidebar{
+      width:320px; min-width:220px;
+      background:linear-gradient(180deg,var(--panel), #081015 150%);
+      border-right:1px solid var(--glass);
+      display:flex;flex-direction:column;padding:20px;gap:12px;
+    }
+    .brand {text-align:center;}
+    .brand h1{margin:0;color:var(--accent);font-size:34px;letter-spacing:1px}
+    .brand p{margin:0;color:var(--muted);font-size:12px}
+    .controls{display:flex;gap:8px;justify-content:center;margin-top:8px}
+    .btn{background:#0d1316;border:1px solid var(--glass);color:#e6f6ef;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:14px}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#06201d;font-weight:700}
+    .search{padding:8px;border-radius:18px;border:1px solid var(--glass);background:#091011;color:#dff6ea}
+    .list-title{color:var(--muted);font-size:12px;margin-top:8px;margin-bottom:6px}
+    .chat-list{flex:1;overflow:auto;padding-right:6px}
+    .chat-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:background .12s}
+    .chat-item:hover{background:rgba(64,128,100,0.03)}
+    .chat-item.selected{background:rgba(64,128,100,0.06)}
+    .avatar{width:44px;height:44px;border-radius:10px;background:#061014;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700}
+    .meta{flex:1;display:flex;flex-direction:column}
+    .name{font-size:14px;color:#eaf8f0;font-weight:600}
+    .sub{font-size:12px;color:var(--muted)}
+
+    /* MAIN */
+    .main{flex:1;display:flex;flex-direction:column}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--glass);background:linear-gradient(180deg, rgba(255,255,255,0.005), transparent)}
+    .header .left{display:flex;gap:12px;align-items:center}
+    .chat-title{font-size:18px;color:var(--accent);font-weight:800}
+    .chat-sub{font-size:12px;color:var(--muted)}
+    .user-state{font-size:13px;color:var(--muted)}
+    .messages{flex:1;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg, rgba(255,255,255,0.002), transparent)}
+    .msg{max-width:78%;padding:12px 14px;border-radius:12px;word-break:break-word;position:relative}
+    .msg.ai{background:var(--card);color:#dff7ef;align-self:flex-start;border:1px solid var(--glass)}
+    .msg.user{background:linear-gradient(180deg,#9ff3cf,#5fd39a);color:#04201a;align-self:flex-end}
+    .msg .meta{font-size:11px;color:var(--muted);margin-top:8px}
+
+    /* reply preview */
+    .reply-preview{background:rgba(255,255,255,0.02);border-left:3px solid var(--accent);padding:8px;border-radius:6px;margin-bottom:8px;color:#cfeee0}
+
+    /* composer */
+    .composer{padding:14px;border-top:1px solid var(--glass);display:flex;gap:10px;align-items:flex-end;background:linear-gradient(180deg, rgba(0,0,0,0.01), transparent)}
+    textarea#input{flex:1;min-height:48px;max-height:140px;resize:none;padding:12px;border-radius:12px;border:1px solid var(--glass);background:#071014;color:#e8fff3;font-size:14px;outline:none}
+    button#send{width:56px;height:48px;border-radius:12px;border:none;background:var(--accent);color:#041918;font-weight:800;font-size:18px;cursor:pointer}
+    button#send:disabled{opacity:0.5;cursor:not-allowed}
+    .typing{font-size:13px;color:var(--muted);margin-left:8px}
+
+    /* modals */
+    .modal{position:fixed;left:0;top:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;background:rgba(4,6,8,0.6);z-index:999}
+    .modal.active{display:flex}
+    .card{width:92%;max-width:520px;background:#0f1718;padding:18px;border-radius:12px;border:1px solid var(--glass)}
+    .modal h3{color:var(--accent);margin:0 0 12px 0}
+
+    /* quick replies, code, chart */
+    .quick-replies{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .quick-replies button{background:#102024;color:#bfeee0;border:none;padding:6px 10px;border-radius:8px;cursor:pointer}
+    pre.code{background:#021014;padding:12px;border-radius:8px;overflow:auto;color:#bfeaff;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;font-size:13px}
+
+    /* settings panel small */
+    .settings-grid{display:flex;flex-direction:column;gap:10px}
+
+    @media(max-width:880px){
+      .sidebar{position:fixed;top:0;left:0;right:0;height:140px;display:flex;flex-direction:row;gap:6px;padding:10px;z-index:40}
+      .main{margin-top:140px}
+      .chat-list{display:flex;flex-direction:row;gap:8px;overflow:auto}
+      .chat-item{min-width:160px}
+    }
   </style>
+
+  <!-- highlight.js & chart.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="card">
-    <header>
-      <div>
-        <h1>Dot & Box — Play vs Smart AI</h1>
-        <div style="color:#9aa4b2;font-size:13px">Board: 5 × 5 — AI decisions come from your configured web service</div>
-      </div>
-      <div>
-        <button id="restart">Restart Game</button>
-      </div>
-    </header>
-
-    <div id="status">Player 1's turn (You)</div>
-
-    <div style="display:flex;gap:18px" class="main">
-      <div>
-        <div id="game-board"></div>
+  <div class="app">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="brand">
+        <h1>AiVA</h1>
+        <p>AI Virtual Assistant</p>
       </div>
 
-      <aside style="width:260px">
-        <div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.01)">
-          <div style="font-weight:700">AI endpoint</div>
-          <div id="ai-endpoint" style="color:#9aa4b2;font-size:13px;margin-top:6px">loading config...</div>
-        </div>
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <div style="flex:1;padding:10px;border-radius:8px;background:rgba(255,255,255,0.01);text-align:center">
-            <div style="color:#9aa4b2">You</div>
-            <div id="score-1" style="font-size:20px;font-weight:700">0</div>
-          </div>
-          <div style="flex:1;padding:10px;border-radius:8px;background:rgba(255,255,255,0.01);text-align:center">
-            <div style="color:#9aa4b2">AI</div>
-            <div id="score-2" style="font-size:20px;font-weight:700">0</div>
+      <div class="controls">
+        <button id="btnOpenSignIn" class="btn">Sign in</button>
+        <button id="btnOpenSignUp" class="btn">Sign up</button>
+        <button id="btnOpenTerms" class="btn">Terms</button>
+      </div>
+
+      <input id="searchChats" class="search" placeholder="Search chats..." />
+
+      <div class="list-title">Conversations</div>
+      <div id="chatList" class="chat-list" role="list" aria-live="polite"></div>
+
+      <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:8px">
+        Chat history stored in Firebase RTDB. Background worker (Cloud Function) will generate AI replies.
+      </div>
+    </aside>
+
+    <main class="main" role="main">
+      <header class="header">
+        <div class="left">
+          <div>
+            <div class="chat-title" id="uiChatTitle">AiVA</div>
+            <div class="chat-sub" id="uiChatSub">AI Virtual Assistant</div>
           </div>
         </div>
-
-        <div style="margin-top:12px">
-          <button id="export" style="padding:8px;border-radius:8px;border:none;background:#111827;color:#e6eef6">Export State</button>
+        <div class="right">
+          <div id="userState" class="user-state">Not signed in</div>
+          <button id="btnSignOut" class="btn" style="display:none;margin-left:10px">Sign out</button>
         </div>
-      </aside>
+      </header>
+
+      <section id="messages" class="messages" aria-live="polite">
+        <!-- messages injected here -->
+      </section>
+
+      <div class="composer">
+        <div id="replyPreview" class="reply-preview" style="display:none"></div>
+        <textarea id="input" placeholder="Type a message..." aria-label="Message input" disabled></textarea>
+        <button id="send" title="Send" disabled>➤</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- SignIn/SignUp Modal -->
+  <div id="authModal" class="modal" aria-hidden="true">
+    <div class="card">
+      <h3 id="authTitle">Sign In</h3>
+      <div class="settings-grid">
+        <label>Email <input id="authEmail" type="email" placeholder="you@example.com" style="padding:8px;border-radius:8px;border:1px solid var(--glass);background:#071014;color:#e8fff3"></label>
+        <label>Password <input id="authPass" type="password" placeholder="password" style="padding:8px;border-radius:8px;border:1px solid var(--glass);background:#071014;color:#e8fff3"></label>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button id="authPrimary" class="btn primary">Continue</button>
+          <button id="authGoogle" class="btn">Sign in with Google</button>
+        </div>
+        <div style="text-align:left;color:var(--muted);font-size:13px"><a href="#" id="toggleAuth" style="color:var(--accent)">Switch to Sign Up</a></div>
+      </div>
     </div>
   </div>
 
-  <!-- Thinking overlay -->
-  <div id="thinking-overlay">
-    <div id="thinking-card">
-      <div style="display:flex;gap:8px">
-        <div class="dotpulse"></div>
-        <div class="dotpulse"></div>
-        <div class="dotpulse"></div>
+  <!-- Terms Modal -->
+  <div id="termsModal" class="modal" aria-hidden="true">
+    <div class="card">
+      <h3>Terms & Privacy</h3>
+      <div style="color:var(--muted);font-size:13px">
+        <p><strong>Summary:</strong> AiVA stores chat history in your Firebase Realtime Database. AiVA uses third-party AI models — responses may be incorrect. Replace these texts with your legal documents before production.</p>
+        <p>By accepting you consent to store messages and receive AI-generated replies. The app may keep recent messages up to a configured limit for context/memory.</p>
       </div>
-      <div>
-        <div style="font-weight:700">AI is thinking</div>
-        <div style="color:#9aa4b2;font-size:13px">Calculating best move…</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button id="acceptTerms" class="btn primary">Accept</button>
+        <button id="closeTerms" class="btn">Close</button>
       </div>
     </div>
   </div>
 
-<script>
-/* ====================== CONFIG: load config.json to get AI endpoint ====================== */
-let AI_MOVE_URL = '/ai-move'; // default (if same host and api available)
-fetch('config.json').then(r=>r.ok? r.json(): null).then(cfg=>{
-  if(cfg && cfg.AI_MOVE_URL) AI_MOVE_URL = cfg.AI_MOVE_URL;
-  document.getElementById('ai-endpoint').textContent = AI_MOVE_URL;
-}).catch(e=>{
-  document.getElementById('ai-endpoint').textContent = 'using default /ai-move (no config.json)';
-});
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal" aria-hidden="true">
+    <div class="card">
+      <h3>Settings</h3>
+      <div class="settings-grid">
+        <label>Memory size (messages kept for context)
+          <input id="memorySize" type="number" min="3" max="200" value="20" style="padding:8px;border-radius:8px;border:1px solid var(--glass);background:#071014;color:#e8fff3">
+        </label>
+        <label>DB trim size (keep up to)
+          <input id="trimSize" type="number" min="50" max="2000" value="300" style="padding:8px;border-radius:8px;border:1px solid var(--glass);background:#071014;color:#e8fff3">
+        </label>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button id="saveSettings" class="btn primary">Save</button>
+          <button id="closeSettings" class="btn">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-/* ====================== Game (preserve original logic) ====================== */
-const boardSize = 5;
-const gameBoard = document.getElementById("game-board");
-const status = document.getElementById("status");
-const restartButton = document.getElementById("restart");
-const score1El = document.getElementById("score-1");
-const score2El = document.getElementById("score-2");
-const thinkingOverlay = document.getElementById("thinking-overlay");
-const exportBtn = document.getElementById("export");
+  <!-- Firebase compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-let currentPlayer = 1; // 1 = human (blue), 2 = bot (red)
-let scores = { 1: 0, 2: 0 };
-let lines = new Set();
-let gameOver = false;
+  <script>
+    /**************************************************************************
+     * CONFIG - REPLACE BEFORE DEPLOY
+     * - Put your Render proxy URL in SERVER_BASE (no trailing slash)
+     * - Put your Firebase project config below
+     **************************************************************************/
+    const SERVER_BASE = "https://aiva-gwm9.onrender.com"; // replace with your Render server
+    const firebaseConfig = {
+   apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
+  authDomain: "aiva-9abbb.firebaseapp.com",
+  projectId: "aiva-9abbb",
+  storageBucket: "aiva-9abbb.firebasestorage.app",
+  messagingSenderId: "565052629821",
+  appId: "1:565052629821:web:4a0083611ff11011da1b54"
+    };
+    /**************************************************************************/
 
-function createBoard() {
-  const gridTemplate = [];
-  for (let i = 0; i < boardSize * 2 - 1; i++) gridTemplate.push("auto");
-  gameBoard.style.gridTemplateColumns = gridTemplate.join(" ");
-  gameBoard.innerHTML = "";
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-  for (let row = 0; row < boardSize * 2 - 1; row++) {
-    for (let col = 0; col < boardSize * 2 - 1; col++) {
-      if (row % 2 === 0 && col % 2 === 0) {
-        const dot = document.createElement("div");
-        dot.className = "dot";
-        gameBoard.appendChild(dot);
-      } else if (row % 2 === 0 || col % 2 === 0) {
-        const line = document.createElement("div");
-        line.className = `line ${row % 2 === 0 ? "horizontal" : "vertical"}`;
-        line.dataset.row = row;
-        line.dataset.col = col;
-        line.addEventListener("click", () => selectLine(row, col));
-        gameBoard.appendChild(line);
+    // DOM refs
+    const chatListEl = document.getElementById('chatList');
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const userState = document.getElementById('userState');
+    const btnSignOut = document.getElementById('btnSignOut');
+
+    const btnOpenSignIn = document.getElementById('btnOpenSignIn');
+    const btnOpenSignUp = document.getElementById('btnOpenSignUp');
+    const authModal = document.getElementById('authModal');
+    const authTitle = document.getElementById('authTitle');
+    const authPrimary = document.getElementById('authPrimary');
+    const authGoogle = document.getElementById('authGoogle');
+    const toggleAuth = document.getElementById('toggleAuth');
+    const authEmail = document.getElementById('authEmail');
+    const authPass = document.getElementById('authPass');
+
+    const termsModal = document.getElementById('termsModal');
+    const btnOpenTerms = document.getElementById('btnOpenTerms');
+    const closeTerms = document.getElementById('closeTerms');
+    const acceptTerms = document.getElementById('acceptTerms');
+
+    const settingsModal = document.getElementById('settingsModal');
+    const memorySizeInput = document.getElementById('memorySize');
+    const trimSizeInput = document.getElementById('trimSize');
+    const saveSettings = document.getElementById('saveSettings');
+    const closeSettings = document.getElementById('closeSettings');
+
+    const replyPreview = document.getElementById('replyPreview');
+
+    let currentUser = null;
+    let chatId = null;
+    let messagesCache = []; // recently loaded messages
+    let selectedChat = { id: 'aiva_global', name: 'AiVA', type: 'ai' }; // default
+    let acceptedTerms = false;
+    let MAX_CONTEXT = parseInt(memorySizeInput.value || 20, 10);
+    let MAX_STORE = parseInt(trimSizeInput.value || 300, 10);
+
+    // helper: show/hide modal
+    function showModal(el){ el.classList.add('active'); el.setAttribute('aria-hidden','false'); }
+    function hideModal(el){ el.classList.remove('active'); el.setAttribute('aria-hidden','true'); }
+
+    // initial UI wiring
+    btnOpenSignIn.onclick = ()=> openAuth(false);
+    btnOpenSignUp.onclick = ()=> openAuth(true);
+    authGoogle.onclick = async ()=> { try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); hideModal(authModal); } catch(e){ alert(e.message); } };
+    toggleAuth.onclick = ()=> openAuth(authTitle.textContent.includes('In'));
+    btnOpenTerms.onclick = ()=> showModal(termsModal);
+    closeTerms.onclick = ()=> hideModal(termsModal);
+    acceptTerms.onclick = ()=> { acceptedTerms = true; hideModal(termsModal); if(currentUser) enableComposer(); };
+
+    btnSignOut.onclick = ()=> auth.signOut();
+    saveSettings.onclick = ()=> { MAX_CONTEXT = Math.max(3, parseInt(memorySizeInput.value||20,10)); MAX_STORE = Math.max(50, parseInt(trimSizeInput.value||300,10)); hideModal(settingsModal); };
+    closeSettings.onclick = ()=> hideModal(settingsModal);
+
+    // Auth modal open
+    function openAuth(isSignUp){
+      authModal.style.display = 'flex';
+      showModal(authModal);
+      authTitle.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+      authPrimary.textContent = isSignUp ? 'Create account' : 'Sign in';
+      authPrimary.onclick = isSignUp ? handleSignUp : handleSignIn;
+    }
+
+    async function handleSignIn(){
+      try {
+        await auth.signInWithEmailAndPassword(authEmail.value, authPass.value);
+        hideModal(authModal);
+      } catch(e){ alert(e.message); }
+    }
+    async function handleSignUp(){
+      try {
+        await auth.createUserWithEmailAndPassword(authEmail.value, authPass.value);
+        hideModal(authModal);
+      } catch(e){ alert(e.message); }
+    }
+
+    // Auth state change
+    auth.onAuthStateChanged(async user => {
+      currentUser = user;
+      if(user){
+        userState.textContent = 'Signed in as ' + (user.displayName || user.email);
+        btnSignOut.style.display = 'inline-block';
+        // presence
+        try { db.ref('users/' + user.uid).set({ uid:user.uid, name:user.displayName || user.email, online:true }); db.ref('users/' + user.uid + '/online').onDisconnect().set(false); } catch(e){}
+        // enable composer only after terms accepted
+        if(acceptedTerms) enableComposer();
+        // set per-user chatId
+        chatId = 'aiva_' + user.uid;
+        startListening(chatId);
+        renderSidebar(); // show bot list etc.
       } else {
-        const box = document.createElement("div");
-        box.className = "box";
-        box.dataset.row = row;
-        box.dataset.col = col;
-        gameBoard.appendChild(box);
+        userState.textContent = 'Not signed in';
+        btnSignOut.style.display = 'none';
+        inputEl.disabled = true; sendBtn.disabled = true;
+        if(chatId) try { db.ref('chats/' + chatId).off(); } catch(e){}
+        chatId = null;
+        messagesEl.innerHTML = '';
+        renderSidebar();
       }
-    }
-  }
-}
-
-function selectLine(row, col) {
-  if (gameOver || currentPlayer !== 1) return;
-  const key = `${row}-${col}`;
-  if (lines.has(key)) return;
-
-  lines.add(key);
-  const el = document.querySelector(`.line[data-row="${row}"][data-col="${col}"]`);
-  el.classList.add("active");
-  el.style.backgroundColor = "#4a90e2";
-
-  const gotBox = checkForCompletedBoxes(row, col);
-
-  if (!gotBox) {
-    currentPlayer = 2;
-    updateStatus();
-    setTimeout(makeBotMove, 600);
-  } else {
-    updateStatus();
-  }
-
-  if (isGameOver()) declareWinner();
-}
-
-function checkForCompletedBoxes(row, col) {
-  let completed = false;
-  const tryBox = (r, c) => {
-    const top    = `${r-1}-${c}`, bottom = `${r+1}-${c}`,
-          left   = `${r}-${c-1}`, right  = `${r}-${c+1}`;
-    if ([top, bottom, left, right].every(l => lines.has(l))) {
-      const box = document.querySelector(`.box[data-row="${r}"][data-col="${c}"]`);
-      if (!box.classList.contains("player-1") && !box.classList.contains("player-2")) {
-        box.classList.add(currentPlayer === 1 ? "player-1" : "player-2");
-        box.textContent = currentPlayer;
-        scores[currentPlayer]++;
-        completed = true;
-      }
-    }
-  };
-  if (row % 2 === 0) {
-    tryBox(row-1, col);
-    tryBox(row+1, col);
-  } else {
-    tryBox(row, col-1);
-    tryBox(row, col+1);
-  }
-  score1El.textContent = scores[1];
-  score2El.textContent = scores[2];
-  return completed;
-}
-
-function updateStatus() {
-  if (gameOver) return;
-  status.textContent = `Player ${currentPlayer}'s turn (${currentPlayer===1?"Blue":"Red (AI)"})`;
-}
-
-function isGameOver() {
-  return scores[1] + scores[2] === (boardSize-1)*(boardSize-1);
-}
-
-function declareWinner() {
-  gameOver = true;
-  const winner = scores[1]>scores[2]?"Blue (You)":"Red (AI)";
-  status.textContent = `${winner} is the winner!`;
-}
-
-function restartGame() {
-  lines.clear();
-  scores = {1:0,2:0};
-  currentPlayer = 1;
-  gameOver = false;
-  createBoard();
-  updateStatus();
-  score1El.textContent = 0;
-  score2El.textContent = 0;
-}
-
-restartButton.addEventListener("click", restartGame);
-exportBtn.addEventListener("click", () => {
-  const state = { boardSize, lines: Array.from(lines), scores, currentPlayer };
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'dotbox-state.json'; a.click();
-  URL.revokeObjectURL(url);
-});
-
-createBoard();
-updateStatus();
-
-/* ========== Helpers for box-line counting (used by server heuristics/fallback) ========== */
-function countBoxLines(r, c) {
-  const top    = `${r-1}-${c}`, bottom = `${r+1}-${c}`,
-        left   = `${r}-${c-1}`, right  = `${r}-${c+1}`;
-  return [top, bottom, left, right].filter(l => lines.has(l)).length;
-}
-function boxClaimed(row,col){
-  const box = document.querySelector(`.box[data-row="${row}"][data-col="${col}"]`);
-  return box && (box.classList.contains("player-1") || box.classList.contains("player-2"));
-}
-
-/* ========== Applying Bot move (unchanged logic) ========== */
-async function applyBotMove(choice) {
-  if (!choice || typeof choice.row !== 'number' || typeof choice.col !== 'number') {
-    console.warn('invalid bot move suggestion', choice);
-    return fallbackApply();
-  }
-  const key = `${choice.row}-${choice.col}`;
-  // if invalid or already taken -> fallback apply later
-  if (lines.has(key) || choice.row < 0) {
-    return fallbackApply();
-  }
-  lines.add(key);
-  const el = document.querySelector(`.line[data-row="${choice.row}"][data-col="${choice.col}"]`);
-  if (el) {
-    el.classList.add("active");
-    el.style.backgroundColor = "#e94e77";
-  }
-  const gotBox = checkForCompletedBoxes(choice.row, choice.col);
-  if (!gotBox) {
-    currentPlayer = 1;
-    updateStatus();
-  } else {
-    updateStatus();
-    setTimeout(makeBotMove, 700);
-  }
-  if (isGameOver()) declareWinner();
-}
-
-async function fallbackApply() {
-  // pick first available
-  const size = boardSize*2-1;
-  for (let r=0;r<size;r++){
-    for (let c=0;c<size;c++){
-      const k = `${r}-${c}`;
-      if ((r%2===0||c%2===0) && !(r%2===0 && c%2===0) && !lines.has(k)) {
-        lines.add(k);
-        const el = document.querySelector(`.line[data-row="${r}"][data-col="${c}"]`);
-        if (el) { el.classList.add("active"); el.style.backgroundColor = "#e94e77"; }
-        const gotBox = checkForCompletedBoxes(r,c);
-        if (!gotBox) { currentPlayer = 1; updateStatus(); } else { updateStatus(); setTimeout(makeBotMove,700); }
-        if (isGameOver()) declareWinner();
-        return;
-      }
-    }
-  }
-}
-
-/* ========== makeBotMove: calls configured AI endpoint ========== */
-async function makeBotMove(){
-  if (gameOver) return;
-  currentPlayer = 2;
-  updateStatus();
-  thinkingOverlay.style.display = 'flex';
-
-  const payload = { boardSize, lines: Array.from(lines), scores, currentPlayer };
-
-  try {
-    const resp = await fetch(AI_MOVE_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
     });
-    if (!resp.ok) throw new Error('AI service returned '+resp.status);
-    const data = await resp.json();
-    thinkingOverlay.style.display = 'none';
-    // data expected: { row, col, explanation }
-    await applyBotMove({row: data.row, col: data.col});
-    // optionally show explanation in console
-    if (data.explanation) console.info('AI:', data.explanation);
-  } catch (err) {
-    thinkingOverlay.style.display = 'none';
-    console.error('AI call failed:', err);
-    // fallback apply
-    await fallbackApply();
-  }
-}
 
-/* optional: disable right-click if you want to mimic original */
-document.addEventListener('contextmenu', e => {});
-</script>
+    // Sidebar: render multiple chatbot types & docs
+    function renderSidebar(){
+      chatListEl.innerHTML = '';
+      // AiVA main
+      const bot = makeChatItem('aiva_global', 'AiVA', 'AI Virtual Assistant', '🤖', true);
+      chatListEl.appendChild(bot);
+      // Documents assistant
+      const docs = makeChatItem('aiva_docs', 'Docs', 'Document Assistant', '📄');
+      chatListEl.appendChild(docs);
+      // Code assistant
+      const code = makeChatItem('aiva_code', 'Code', 'Code & Snippets', '💻');
+      chatListEl.appendChild(code);
+      // Analytics assistant (charts)
+      const charts = makeChatItem('aiva_charts', 'Charts', 'Data & Charts', '📊');
+      chatListEl.appendChild(charts);
+      // Optionally show user-created chats (groups etc.) - placeholder
+      // Selected
+      // highlight selected
+      Array.from(chatListEl.children).forEach(c=> c.onclick = () => {
+        Array.from(chatListEl.children).forEach(x=> x.classList.remove('selected'));
+        c.classList.add('selected');
+        selectedChat = { id: c.dataset.cid, name: c.dataset.name, type: c.dataset.type };
+        uiSetHeader(c.dataset.name, c.dataset.hint);
+        // subscribe to per-chat messages if needed (we use per-user main chat for AI)
+        // For now keep listening to current user's chatId only (aiva_{uid})
+      });
+    }
+
+    function makeChatItem(cid, name, hint, avatarText, selected=false){
+      const div = document.createElement('div');
+      div.className = 'chat-item' + (selected ? ' selected' : '');
+      div.dataset.cid = cid; div.dataset.name = name; div.dataset.type = 'ai'; div.dataset.hint = hint;
+      div.innerHTML = `<div class="avatar">${avatarText}</div><div class="meta"><div class="name">${name}</div><div class="sub">${hint}</div></div>`;
+      return div;
+    }
+
+    function uiSetHeader(title, sub){ document.getElementById('uiChatTitle').textContent = title || 'AiVA'; document.getElementById('uiChatSub').textContent = sub || 'AI Virtual Assistant'; }
+
+    // enable composer
+    function enableComposer(){ inputEl.disabled = false; sendBtn.disabled = true; inputEl.focus(); }
+
+    // Start listening to chat messages for the user's chat
+    function startListening(cid){
+      if(!cid) return;
+      const ref = db.ref('chats/' + cid);
+      try { ref.off(); } catch(e){}
+      // on value to maintain stable order and dedupe
+      ref.on('value', snap => {
+        const arr = [];
+        snap.forEach(s => arr.push(Object.assign({ key: s.key }, s.val())));
+        arr.sort((a,b) => (a.timestamp||0) - (b.timestamp||0));
+        messagesCache = arr.slice(-MAX_STORE);
+        renderMessages(messagesCache);
+      });
+    }
+
+    // Render messages with support for code, charts, quick replies, buttons
+    function renderMessages(arr){
+      messagesEl.innerHTML = '';
+      for(const m of arr){
+        const wrapper = document.createElement('div');
+        wrapper.className = 'msg ' + (m.sender === 'user' ? 'user' : 'ai');
+        // reply preview
+        let inner = '';
+        if(m.replyTo && m.replyTo.text){
+          inner += `<div class="reply-preview">${escapeHtml(m.replyTo.sender)}: ${escapeHtml(m.replyTo.text.slice(0,120))}</div>`;
+        }
+        // message types
+        if(m.type === 'code'){
+          inner += `<div>${escapeHtml(m.text||'')}</div><pre class="code"><code>${escapeHtml(m.code||'')}</code></pre>`;
+        } else if(m.type === 'chart' && m.chartConfig){
+          const cid = 'chart_' + (m.key || Math.random().toString(36).slice(2,9));
+          inner += `<div>${escapeHtml(m.text||'')}</div><canvas id="${cid}" width="400" height="180" style="margin-top:8px;border-radius:8px"></canvas>`;
+          // schedule chart render
+          setTimeout(()=> {
+            try {
+              new Chart(document.getElementById(cid), m.chartConfig);
+            } catch(e){ console.warn('chart render error', e); }
+          }, 80);
+        } else {
+          inner += `<div>${escapeHtml(m.text||'')}</div>`;
+        }
+
+        // quick replies / buttons
+        if(Array.isArray(m.quickReplies) && m.quickReplies.length){
+          inner += `<div class="quick-replies">` + m.quickReplies.map(q => `<button data-q="${encodeURIComponent(q)}" class="qr-btn">${escapeHtml(q)}</button>`).join('') + `</div>`;
+        }
+
+        // meta
+        inner += `<div class="meta">${new Date(m.timestamp||Date.now()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${m.status ? ' · ' + escapeHtml(m.status) : ''}</div>`;
+        wrapper.innerHTML = inner;
+
+        // attach quick reply handlers
+        wrapper.querySelectorAll('.qr-btn').forEach(btn => {
+          btn.onclick = () => {
+            const q = decodeURIComponent(btn.dataset.q);
+            inputEl.value = q;
+            sendBtn.disabled = false;
+            inputEl.focus();
+          };
+        });
+
+        // double click to reply preview
+        wrapper.ondblclick = () => {
+          replyPreview.style.display = 'block';
+          replyPreview.textContent = `Replying to: ${m.sender === 'user' ? 'You' : 'AiVA'} — ${m.text && m.text.length > 120 ? m.text.slice(0,120) + '...' : m.text}`;
+          replyPreview.dataset.replyKey = m.key;
+          replyPreview.dataset.replyText = m.text;
+          replyPreview.dataset.replySender = m.sender === 'user' ? (currentUser ? currentUser.displayName || currentUser.email : 'You') : (m.senderName || 'AiVA');
+        };
+
+        messagesEl.appendChild(wrapper);
+      }
+      // highlight code blocks
+      document.querySelectorAll('pre.code code').forEach(block => { if(window.hljs) hljs.highlightElement(block); });
+      messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
+    }
+
+    // small helper: escape
+    function escapeHtml(s){
+      if(s === null || s === undefined) return '';
+      return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+    }
+
+    // send message workflow: push user message to RTDB (Cloud Function worker will generate AI reply)
+    inputEl.addEventListener('input', () => sendBtn.disabled = inputEl.value.trim().length < 1);
+    inputEl.addEventListener('keydown', async (e) => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); await handleSend(); } });
+    sendBtn.addEventListener('click', handleSend);
+
+    async function handleSend(){
+      const text = inputEl.value.trim();
+      if(!text) return;
+      if(!currentUser){ alert('Please sign in to send messages.'); openAuth(false); return; }
+      if(!acceptedTerms){ alert('Please accept Terms & Privacy first.'); showModal(termsModal); return; }
+
+      // clear input and disable send temporarily
+      inputEl.value = ''; sendBtn.disabled = true;
+
+      const cid = chatId;
+      if(!cid){ console.error('No chatId'); return; }
+      const chatRef = db.ref('chats/' + cid);
+
+      // build message object: include replyTo info if set
+      const msg = { sender: 'user', text, timestamp: Date.now(), status: 'sent' };
+      if(replyPreview.dataset && replyPreview.dataset.replyText){
+        msg.replyTo = { text: replyPreview.dataset.replyText, key: replyPreview.dataset.replyKey, sender: replyPreview.dataset.replySender };
+        // clear reply preview
+        replyPreview.style.display = 'none';
+        delete replyPreview.dataset.replyKey; delete replyPreview.dataset.replyText; delete replyPreview.dataset.replySender;
+      }
+
+      try {
+        // push user message — Cloud Function should trigger on child_added where sender === 'user'
+        await chatRef.push(msg);
+      } catch(e){ console.error('push error', e); }
+
+      // trim chat size (frontend best-effort)
+      trimChat(chatRef, MAX_STORE).catch(()=>{});
+    }
+
+    // trim function: keep newest N messages (best-effort from frontend)
+    async function trimChat(ref, limit){
+      try {
+        const snap = await ref.orderByChild('timestamp').once('value');
+        const nodes = [];
+        snap.forEach(s => nodes.push({ key: s.key, val: s.val() }));
+        if(nodes.length <= limit) return;
+        const removeCount = nodes.length - limit;
+        const toRemove = nodes.slice(0, removeCount);
+        const updates = {};
+        toRemove.forEach(n => updates[n.key] = null);
+        await ref.update(updates);
+      } catch(e){ console.warn('trimChat error', e); }
+    }
+
+    // keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if(e.key === '/' && document.activeElement !== inputEl){ e.preventDefault(); inputEl.focus(); }
+    });
+
+    // first-load behavior
+    window.addEventListener('DOMContentLoaded', () => {
+      showModal(termsModal); // require acceptance
+      renderSidebar(); // initially show bots
+    });
+
+    // small: if user navigates away, presence set to offline (handled onAuthStateChange onDisconnect above)
+    // Note: background worker (Firebase Function) must be deployed separately. The frontend only pushes user messages to RTDB.
+    // The worker should listen to child_added and generate AI reply using HF or OpenAI then push AI message to same chat path.
+
+  </script>
+</body>
+</html>
+
+  
 </body>
 </html>
