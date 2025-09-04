@@ -1,18 +1,15 @@
 {
-  "name": "aiva-chat-server",
+  "name": "dot-and-box-ai-server",
   "version": "1.0.0",
-  "description": "AiVA Chat server and background worker",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "start": "node server.js",
-    "worker": "node worker.js"
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "firebase": "^9.22.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^2.6.7"
   }
 }
