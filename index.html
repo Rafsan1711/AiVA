@@ -1,584 +1,325 @@
-<!doctype html>
-<html lang="en" class="antialiased">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AiVA — AI Virtual Assistant</title>
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Libraries -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/vs2015.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/autosize.js/4.0.2/autosize.min.js"></script>
-
-  <!-- Firebase compat -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
-  <!-- Local font placeholder -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dot & Box — Play vs AI</title>
   <style>
-    @font-face {
-      font-family: 'Balsamiq Sans';
-      src: url('fonts/BalsamiqSans-Regular.ttf') format('truetype');
-      font-display: swap;
-    }
-    :root{
-      --bg:#071017;
-      --panel:#0b1518;
-      --card:#0f191b;
-      --muted:#98b1b7;
-      --accent-blue:#4a90e2;
-      --accent-green:#4ade80;
-      --glass: rgba(255,255,255,0.03);
-      --text:#eaf3fb;
-    }
-    html,body,#root{height:100%}
-    body{
-      margin:0; background:linear-gradient(180deg,var(--bg),#031116 140%);
-      font-family:'Balsamiq Sans', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      color:var(--text);
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-    }
-    /* scrollbars */
-    .thin-scroll::-webkit-scrollbar{width:8px;height:8px}
-    .thin-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.03);border-radius:8px}
-    /* chat bubbles */
-    .msg-user{background:linear-gradient(90deg,var(--accent-blue),var(--accent-green)); color:#021; border-radius:14px 14px 4px 14px;}
-    .msg-ai{background:var(--card); color:var(--text); border-radius:14px 14px 14px 4px;}
-    pre.code { background:#031018;padding:.6rem;border-radius:.5rem;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;font-size:.92rem;}
-    /* ensure no overflow */
-    .no-overflow { overflow:hidden; }
-    .clamp-card { max-width: 100%; word-wrap: break-word; white-space: pre-wrap; }
-    /* responsive */
-    @media (max-width:900px){
-      .layout { grid-template-columns: 1fr; grid-auto-rows: auto 1fr auto; }
-      .sidebar { height:230px; overflow:auto; }
-    }
-    /* small utilities */
-    .glass { background:var(--glass); border:1px solid rgba(255,255,255,0.03); }
+    /* Simple dark Claude-like UI — keep minimal */
+    body{font-family:Arial,sans-serif;background:#0f1720;color:#e6eef6;margin:0;padding:28px;display:flex;justify-content:center}
+    .card{width:820px;background:linear-gradient(180deg,#071024,#091227);padding:18px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    header h1{margin:0;font-size:18px}
+    .main{display:flex;gap:18px}
+    #game-board{display:grid;gap:6px;margin-top:10px}
+    .dot{width:12px;height:12px;border-radius:50%;background:#e6eef6}
+    .line{background:#2b3440;cursor:pointer;border-radius:6px;transition:transform .06s}
+    .line.horizontal{height:8px;width:64px}
+    .line.vertical{width:8px;height:64px}
+    .line.active{background:#444;cursor:default;opacity:0.9}
+    .box{width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:transparent}
+    .player-1{background:linear-gradient(180deg, rgba(47,110,255,0.14), rgba(47,110,255,0.08));color:#cfe0ff;font-weight:700}
+    .player-2{background:linear-gradient(180deg, rgba(255,91,127,0.12), rgba(255,91,127,0.06));color:#ffe6ec;font-weight:700}
+    #status{padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);text-align:center;margin-bottom:6px;font-weight:700}
+    #restart{margin-top:8px;padding:8px 10px;border-radius:8px;background:#111827;border:none;color:#e6eef6;cursor:pointer}
+    /* Thinking overlay */
+    #thinking-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:999}
+    #thinking-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    .dotpulse{width:9px;height:9px;border-radius:50%;background:#9aa4b2;animation:throb 1s infinite}
+    .dotpulse:nth-child(2){animation-delay:.12s}.dotpulse:nth-child(3){animation-delay:.24s}
+    @keyframes throb{0%{transform:translateY(0);opacity:.6}50%{transform:translateY(-6px);opacity:1}100%{transform:translateY(0);opacity:.6}
   </style>
 </head>
-
 <body>
-  <div id="root" class="min-h-screen p-4 layout grid grid-cols-[320px_1fr] gap-4">
-    <!-- SIDEBAR -->
-    <aside class="sidebar glass rounded-xl p-4 flex flex-col shadow-lg overflow-hidden">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-black"
-               style="background:linear-gradient(90deg,var(--accent-blue),var(--accent-green));">AiVA</div>
-          <div>
-            <div class="text-lg font-semibold leading-4">AiVA</div>
-            <div class="text-xs text-[var(--muted)]">AI Virtual Assistant</div>
+  <div class="card">
+    <header>
+      <div>
+        <h1>Dot & Box — Play vs Smart AI</h1>
+        <div style="color:#9aa4b2;font-size:13px">Board: 5 × 5 — AI decisions come from your configured web service</div>
+      </div>
+      <div>
+        <button id="restart">Restart Game</button>
+      </div>
+    </header>
+
+    <div id="status">Player 1's turn (You)</div>
+
+    <div style="display:flex;gap:18px" class="main">
+      <div>
+        <div id="game-board"></div>
+      </div>
+
+      <aside style="width:260px">
+        <div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.01)">
+          <div style="font-weight:700">AI endpoint</div>
+          <div id="ai-endpoint" style="color:#9aa4b2;font-size:13px;margin-top:6px">loading config...</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <div style="flex:1;padding:10px;border-radius:8px;background:rgba(255,255,255,0.01);text-align:center">
+            <div style="color:#9aa4b2">You</div>
+            <div id="score-1" style="font-size:20px;font-weight:700">0</div>
+          </div>
+          <div style="flex:1;padding:10px;border-radius:8px;background:rgba(255,255,255,0.01);text-align:center">
+            <div style="color:#9aa4b2">AI</div>
+            <div id="score-2" style="font-size:20px;font-weight:700">0</div>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button id="newChat" class="px-3 py-1 rounded-md bg-[var(--accent-green)] text-black text-sm">New</button>
-          <button id="toggleSidebar" class="md:hidden text-[var(--muted)]">☰</button>
-        </div>
-      </div>
 
-      <div class="mt-3">
-        <div class="flex items-center gap-2 bg-[rgba(255,255,255,0.02)] rounded-md px-3 py-2">
-          <i class="fa fa-search text-[var(--muted)]"></i>
-          <input id="searchInput" placeholder="Search chats..." class="bg-transparent outline-none text-sm w-full text-[var(--text)]" />
+        <div style="margin-top:12px">
+          <button id="export" style="padding:8px;border-radius:8px;border:none;background:#111827;color:#e6eef6">Export State</button>
         </div>
-      </div>
-
-      <div id="chatList" class="mt-3 flex-1 overflow-auto thin-scroll space-y-2">
-        <!-- chat items injected -->
-      </div>
-
-      <!-- bottom profile card -->
-      <div class="mt-3 pt-3 border-t border-white/5 flex items-center gap-3">
-        <img id="profilePic" src="" class="w-12 h-12 rounded-full object-cover bg-slate-700" alt="avatar" />
-        <div class="flex-1 min-w-0">
-          <div id="profileName" class="text-sm font-semibold truncate">Not signed</div>
-          <div id="profileEmail" class="text-xs text-[var(--muted)] truncate">—</div>
-        </div>
-        <div class="flex flex-col gap-2">
-          <button id="signinBtn" class="text-xs text-[var(--muted)] px-2 py-1 rounded-md border border-white/5">Sign in</button>
-          <button id="signoutBtn" class="text-xs bg-red-500 px-2 py-1 rounded-md text-black hidden">Sign out</button>
-        </div>
-      </div>
-    </aside>
-
-    <!-- MAIN -->
-    <main class="bg-[var(--card)] rounded-xl flex flex-col overflow-hidden shadow-lg">
-      <!-- top -->
-      <div class="flex items-center justify-between p-4 border-b border-white/5">
-        <div>
-          <div id="chatHeaderTitle" class="text-lg font-semibold">Select a chat</div>
-          <div id="chatHeaderSub" class="text-xs text-[var(--muted)]">AiVA • Context-aware assistant</div>
-        </div>
-        <div class="flex items-center gap-2">
-          <select id="modelSelect" class="rounded-md p-2 bg-transparent border border-white/5 text-sm">
-            <option value="openai/gpt-oss-120b:together">gpt-oss-120b</option>
-            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-          </select>
-          <input id="contextLen" type="number" min="1" max="80" value="20" class="w-16 rounded-md p-2 bg-transparent border border-white/5 text-sm" title="Context messages" />
-          <button id="settingsBtn" class="text-[var(--muted)] px-3 py-1 rounded-md border border-white/5">Settings</button>
-        </div>
-      </div>
-
-      <!-- messages -->
-      <div id="messages" class="flex-1 p-4 overflow-auto thin-scroll space-y-4">
-        <!-- messages appended -->
-      </div>
-
-      <!-- input area -->
-      <div class="p-3 border-t border-white/5 bg-gradient-to-t from-transparent to-[rgba(255,255,255,0.01)]">
-        <div id="replyPreview" class="hidden mb-2 bg-[rgba(255,255,255,0.02)] p-2 rounded-md flex justify-between items-center text-sm">
-          <div id="replySummary" class="text-[var(--muted)] truncate"></div>
-          <button id="cancelReply" class="text-[var(--muted)]">✕</button>
-        </div>
-
-        <div class="flex gap-3">
-          <textarea id="messageInput" rows="1" placeholder="Ask AiVA — Enter to send, Shift+Enter for newline" class="flex-1 resize-none bg-transparent p-3 rounded-md border border-white/5 focus:outline-none text-[var(--text)] clamp-card"></textarea>
-          <div class="flex flex-col gap-2 justify-end">
-            <button id="sendBtn" class="bg-[var(--accent-blue)] px-4 py-2 rounded-md text-black font-semibold">Send</button>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- AUTH MODAL -->
-  <div id="authModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-    <div class="bg-[var(--panel)] rounded-lg p-6 w-11/12 max-w-md">
-      <h3 class="text-lg font-semibold mb-2">Sign in to AiVA</h3>
-      <div class="text-sm text-[var(--muted)] mb-4">Sign in with Google or Email/Password</div>
-      <div class="flex gap-2">
-        <button id="googleSign" class="flex-1 bg-white text-black rounded-md py-2">Sign in with Google</button>
-      </div>
-      <div class="mt-4 text-[var(--muted)] text-sm">Or Email</div>
-      <input id="authEmail" class="mt-2 w-full bg-transparent border border-white/5 rounded-md p-2" placeholder="Email" />
-      <input id="authPass" type="password" class="mt-2 w-full bg-transparent border border-white/5 rounded-md p-2" placeholder="Password" />
-      <div class="flex gap-2 mt-3">
-        <button id="emailSign" class="flex-1 bg-[var(--accent-green)] text-black rounded-md py-2">Sign in / Sign up</button>
-        <button id="closeAuth" class="flex-1 border border-white/5 rounded-md py-2">Close</button>
-      </div>
+      </aside>
     </div>
   </div>
 
-  <!-- TERMS MODAL -->
-  <div id="termsModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-60">
-    <div class="bg-[var(--panel)] rounded-lg p-6 w-11/12 max-w-2xl">
-      <h3 class="text-lg font-semibold mb-2">Terms & Privacy</h3>
-      <div class="text-sm text-[var(--muted)] mb-4 max-h-56 overflow-auto thin-scroll">
-        <p><strong>Short summary:</strong> AiVA stores chat history to provide context and better replies. Do not share very sensitive personal info. You can delete chats anytime. For full terms & privacy add your legal text in server or docs.</p>
+  <!-- Thinking overlay -->
+  <div id="thinking-overlay">
+    <div id="thinking-card">
+      <div style="display:flex;gap:8px">
+        <div class="dotpulse"></div>
+        <div class="dotpulse"></div>
+        <div class="dotpulse"></div>
       </div>
-      <div class="flex justify-end gap-3">
-        <button id="declineTerms" class="px-3 py-1 rounded-md border border-white/5">Decline</button>
-        <button id="acceptTerms" class="px-3 py-1 rounded-md bg-[var(--accent-green)] text-black">Accept & Continue</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SETTINGS MODAL -->
-  <div id="settingsModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-60">
-    <div class="bg-[var(--panel)] rounded-lg p-6 w-11/12 max-w-lg">
-      <h3 class="text-lg font-semibold mb-2">Settings</h3>
-      <div class="text-sm text-[var(--muted)] mb-4">Choose model and context length</div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs text-[var(--muted)] block mb-1">Model</label>
-          <select id="settingModel" class="w-full rounded-md p-2 bg-transparent border border-white/5">
-            <option value="openai/gpt-oss-120b:together">gpt-oss-120b (default)</option>
-            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-xs text-[var(--muted)] block mb-1">Context messages</label>
-          <input id="settingContext" type="number" min="1" max="80" value="20" class="w-full rounded-md p-2 bg-transparent border border-white/5" />
-        </div>
-      </div>
-      <div class="flex justify-end gap-3 mt-4">
-        <button id="closeSettings" class="px-3 py-1 rounded-md border border-white/5">Close</button>
+      <div>
+        <div style="font-weight:700">AI is thinking</div>
+        <div style="color:#9aa4b2;font-size:13px">Calculating best move…</div>
       </div>
     </div>
   </div>
-
-  <!-- message template -->
-  <template id="tplMsg">
-    <div class="max-w-prose">
-      <div class="p-3 msg-content clamp-card"></div>
-      <div class="mt-1 text-xs text-[var(--muted)] msg-meta"></div>
-    </div>
-  </template>
 
 <script>
-/* =================== CONFIG (replace with real values) =================== */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
-  authDomain: "aiva-9abbb.firebaseapp.com",
-  projectId: "aiva-9abbb",
-  storageBucket: "aiva-9abbb.firebasestorage.app",
-  messagingSenderId: "565052629821",
-  appId: "1:565052629821:web:4a0083611ff11011da1b54"
-};
-// Your proxy server (Render) that securely holds HF_TOKEN / OPENAI keys.
-// Must accept POST /api/query with JSON payload { messages: [...], model: '...' }
-const SERVER_BASE = "https://aiva-gwm9.onrender.com;
-/* ====================================================================== */
-
-firebase.initializeApp(FIREBASE_CONFIG);
-const auth = firebase.auth();
-const db = firebase.database();
-
-/* UI refs */
-const $chatList = $('#chatList');
-const $messages = $('#messages');
-const $messageInput = $('#messageInput');
-const $sendBtn = $('#sendBtn');
-const $newChatBtn = $('#newChat');
-const $signinBtn = $('#signinBtn');
-const $signoutBtn = $('#signoutBtn');
-const $authModal = $('#authModal');
-const $googleSign = $('#googleSign');
-const $emailSign = $('#emailSign');
-const $closeAuth = $('#closeAuth');
-const $authEmail = $('#authEmail');
-const $authPass = $('#authPass');
-const $profilePic = $('#profilePic');
-const $profileName = $('#profileName');
-const $profileEmail = $('#profileEmail');
-const $searchInput = $('#searchInput');
-const $termsModal = $('#termsModal');
-const $acceptTerms = $('#acceptTerms');
-const $declineTerms = $('#declineTerms');
-const $settingsModal = $('#settingsModal');
-const $settingsBtn = $('#settingsBtn');
-const $closeSettings = $('#closeSettings');
-const $modelSelect = $('#modelSelect');
-const $contextLen = $('#contextLen');
-const $replyPreview = $('#replyPreview');
-const $replySummary = $('#replySummary');
-const $cancelReply = $('#cancelReply');
-const $messageTpl = $('#tplMsg')[0].content;
-const $settingsModel = $('#settingModel');
-const $settingsContext = $('#settingContext');
-
-/* State */
-let currentUser = null;
-let currentChatId = null;
-let chatsIndex = {};
-let listeners = [];
-let replyTo = null;
-
-/* Helpers */
-function tplMsg(){ return document.getElementById('tplMsg').content.firstElementChild.cloneNode(true); }
-function esc(s){ return s ? s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : ''; }
-function fmtTime(ts){ if(!ts) return ''; return new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
-function uid(){ return 'id_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
-
-/* Autosize textarea */
-autosize($('#messageInput'));
-
-/* Auth UI wiring */
-$signinBtn.on('click', ()=> $authModal.removeClass('hidden'));
-$closeAuth.on('click', ()=> $authModal.addClass('hidden'));
-
-$('#googleSign').on('click', async ()=>{
-  const provider = new firebase.auth.GoogleAuthProvider();
-  try{ await auth.signInWithPopup(provider); $authModal.addClass('hidden'); } catch(e){ alert(e.message); }
-});
-$('#emailSign').on('click', async ()=>{
-  const email = $authEmail.val().trim(), pass = $authPass.val();
-  if(!email||!pass) return alert('Provide email and password');
-  try{ await auth.signInWithEmailAndPassword(email, pass); $authModal.addClass('hidden'); }
-  catch(e){
-    try{ await auth.createUserWithEmailAndPassword(email, pass); $authModal.addClass('hidden'); }
-    catch(err){ alert(err.message); }
-  }
-});
-$signoutBtn.on('click', ()=> auth.signOut());
-
-/* Auth state */
-auth.onAuthStateChanged(async user=>{
-  currentUser = user;
-  if(user){
-    $signinBtn.hide(); $signoutBtn.show();
-    $profilePic.attr('src', user.photoURL || '');
-    $profileName.text(user.displayName || user.email);
-    $profileEmail.text(user.email || '');
-    await afterSignIn();
-  } else {
-    $signinBtn.show(); $signoutBtn.hide();
-    $profilePic.attr('src','');
-    $profileName.text('Not signed'); $profileEmail.text('—');
-    detachAll(); $chatList.empty(); $messages.empty(); $('#chatHeaderTitle').text('Select a chat');
-  }
+/* ====================== CONFIG: load config.json to get AI endpoint ====================== */
+let AI_MOVE_URL = '/ai-move'; // default (if same host and api available)
+fetch('config.json').then(r=>r.ok? r.json(): null).then(cfg=>{
+  if(cfg && cfg.AI_MOVE_URL) AI_MOVE_URL = cfg.AI_MOVE_URL;
+  document.getElementById('ai-endpoint').textContent = AI_MOVE_URL;
+}).catch(e=>{
+  document.getElementById('ai-endpoint').textContent = 'using default /ai-move (no config.json)';
 });
 
-/* After sign-in: presence, terms, load chats */
-async function afterSignIn(){
-  // presence
-  const pRef = db.ref(`users/${currentUser.uid}/presence`);
-  pRef.set({ online:true, lastSeen: Date.now() });
-  pRef.onDisconnect().set({ online:false, lastSeen: Date.now() });
+/* ====================== Game (preserve original logic) ====================== */
+const boardSize = 5;
+const gameBoard = document.getElementById("game-board");
+const status = document.getElementById("status");
+const restartButton = document.getElementById("restart");
+const score1El = document.getElementById("score-1");
+const score2El = document.getElementById("score-2");
+const thinkingOverlay = document.getElementById("thinking-overlay");
+const exportBtn = document.getElementById("export");
 
-  // terms check
-  const metaSnap = await db.ref(`users/${currentUser.uid}/meta`).once('value');
-  const meta = metaSnap.val() || {};
-  if(!meta.acceptedTerms){
-    $termsModal.removeClass('hidden');
-  } else $termsModal.addClass('hidden');
+let currentPlayer = 1; // 1 = human (blue), 2 = bot (red)
+let scores = { 1: 0, 2: 0 };
+let lines = new Set();
+let gameOver = false;
 
-  // chat list listener
-  setupChatList();
+function createBoard() {
+  const gridTemplate = [];
+  for (let i = 0; i < boardSize * 2 - 1; i++) gridTemplate.push("auto");
+  gameBoard.style.gridTemplateColumns = gridTemplate.join(" ");
+  gameBoard.innerHTML = "";
 
-  // auto-create chat if empty
-  const listSnap = await db.ref(`userChats/${currentUser.uid}`).once('value');
-  if(!listSnap.exists()){
-    await createChat('Quick Chat');
-  } else {
-    const keys = Object.keys(listSnap.val()||{});
-    if(keys.length) openChat(keys[0]);
-  }
-}
-
-/* Terms modal actions */
-$acceptTerms.on('click', async ()=>{
-  await db.ref(`users/${currentUser.uid}/meta`).update({ acceptedTerms:true, acceptedAt: Date.now() });
-  $termsModal.addClass('hidden');
-});
-$declineTerms.on('click', ()=> { alert('You must accept terms to use AiVA'); });
-
-/* Setup chat list */
-function setupChatList(){
-  const ref = db.ref(`userChats/${currentUser.uid}`);
-  ref.off();
-  ref.on('value', snap=>{
-    chatsIndex = snap.val() || {};
-    renderChatList();
-  });
-}
-
-/* Render chat list */
-function renderChatList(){
-  $chatList.empty();
-  const items = Object.entries(chatsIndex || {});
-  items.sort((a,b)=> (b[1].lastAt||0) - (a[1].lastAt||0));
-  for(const [id, meta] of items){
-    const el = $(`
-      <div class="flex items-center gap-3 p-2 rounded-md hover:bg-white/2 cursor-pointer">
-        <div class="w-10 h-10 rounded-md flex items-center justify-center bg-[rgba(255,255,255,0.03)] text-sm font-semibold">${(meta.title||'Chat').slice(0,1).toUpperCase()}</div>
-        <div class="flex-1 min-w-0">
-          <div class="text-sm font-medium truncate">${esc(meta.title||'Chat')}</div>
-          <div class="text-xs text-[var(--muted)] truncate">${esc((meta.lastText||'').slice(0,60))}</div>
-        </div>
-      </div>
-    `);
-    el.on('click', ()=> openChat(id));
-    $chatList.append(el);
-  }
-}
-
-/* Create chat */
-$newChatBtn.on('click', ()=> createChat('Chat ' + (Object.keys(chatsIndex||{}).length + 1)));
-async function createChat(title){
-  const id = 'chat_' + Date.now().toString(36);
-  const meta = { title, createdAt: Date.now(), lastText:'', lastAt: Date.now() };
-  await db.ref(`userChats/${currentUser.uid}/${id}`).set(meta);
-  await db.ref(`chats/${currentUser.uid}/${id}`).set({});
-  openChat(id);
-}
-
-/* Detach listeners */
-function detachAll(){
-  listeners.forEach(l=> l.off && l.off());
-  listeners = [];
-}
-function clearMessages(){ $messages.empty(); }
-
-/* Open chat and listen messages */
-async function openChat(chatId){
-  detachAll(); clearMessages();
-  currentChatId = chatId;
-  const metaSnap = await db.ref(`userChats/${currentUser.uid}/${chatId}`).once('value');
-  const meta = metaSnap.val() || {};
-  $('#chatHeaderTitle').text(meta.title || 'Chat');
-  $('#chatHeaderSub').text('AiVA • Context-aware assistant');
-
-  const msgsRef = db.ref(`chats/${currentUser.uid}/${chatId}`);
-  msgsRef.off();
-  msgsRef.orderByChild('timestamp').limitToLast(500).on('child_added', snap => appendMessage({ key: snap.key, ...(snap.val()) }));
-  msgsRef.on('child_changed', snap => updateMessageDOM(snap.key, snap.val()));
-  listeners.push(msgsRef);
-}
-
-/* Append message to DOM */
-function appendMessage(m){
-  if(document.querySelector(`[data-msg="${m.key}"]`)) return;
-  const node = tplMsg();
-  const box = node.querySelector('.msg-content');
-  const meta = node.querySelector('.msg-meta');
-  const isUser = (m.senderId === currentUser.uid);
-  box.classList.add(isUser ? 'msg-user' : 'msg-ai');
-
-  // handle code blocks
-  if(typeof m.text === 'string' && m.text.includes('```')){
-    const parts = m.text.split(/```/);
-    let html = '';
-    for(let i=0;i<parts.length;i++){
-      if(i%2===0) html += `<div>${esc(parts[i])}</div>`;
-      else html += `<pre class="code"><code>${esc(parts[i])}</code></pre>`;
+  for (let row = 0; row < boardSize * 2 - 1; row++) {
+    for (let col = 0; col < boardSize * 2 - 1; col++) {
+      if (row % 2 === 0 && col % 2 === 0) {
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        gameBoard.appendChild(dot);
+      } else if (row % 2 === 0 || col % 2 === 0) {
+        const line = document.createElement("div");
+        line.className = `line ${row % 2 === 0 ? "horizontal" : "vertical"}`;
+        line.dataset.row = row;
+        line.dataset.col = col;
+        line.addEventListener("click", () => selectLine(row, col));
+        gameBoard.appendChild(line);
+      } else {
+        const box = document.createElement("div");
+        box.className = "box";
+        box.dataset.row = row;
+        box.dataset.col = col;
+        gameBoard.appendChild(box);
+      }
     }
-    box.innerHTML = html;
-    box.querySelectorAll('pre code').forEach(b=> hljs.highlightBlock(b));
-  } else if(typeof m.text === 'string' && m.text.startsWith('[chart]')){
-    try{
-      const cfg = JSON.parse(m.text.replace(/^chart\s*/,''));
-      const cid = 'c_'+Math.random().toString(36).slice(2,9);
-      box.innerHTML = `<canvas id="${cid}" height="150"></canvas>`;
-      setTimeout(()=>{ const ctx = document.getElementById(cid).getContext('2d'); new Chart(ctx, cfg); }, 50);
-    } catch(e){ box.textContent = m.text; }
+  }
+}
+
+function selectLine(row, col) {
+  if (gameOver || currentPlayer !== 1) return;
+  const key = `${row}-${col}`;
+  if (lines.has(key)) return;
+
+  lines.add(key);
+  const el = document.querySelector(`.line[data-row="${row}"][data-col="${col}"]`);
+  el.classList.add("active");
+  el.style.backgroundColor = "#4a90e2";
+
+  const gotBox = checkForCompletedBoxes(row, col);
+
+  if (!gotBox) {
+    currentPlayer = 2;
+    updateStatus();
+    setTimeout(makeBotMove, 600);
   } else {
-    box.textContent = m.text;
+    updateStatus();
   }
 
-  meta.textContent = `${m.senderName || (isUser ? 'You' : 'AiVA')} • ${fmtTime(m.timestamp)}`;
-  node.dataset.msg = m.key;
-  $messages.append(node);
-  $messages.scrollTop($messages[0].scrollHeight);
-
-  // quick actions for AI messages
-  if(!isUser){
-    const actions = $('<div class="flex gap-2 mt-2"></div>');
-    const copyBtn = $('<button class="text-xs px-2 py-1 rounded-md border border-white/5">Copy</button>').on('click', ()=> navigator.clipboard.writeText(m.text||''));
-    const replyBtn = $('<button class="text-xs px-2 py-1 rounded-md border border-white/5">Reply</button>').on('click', ()=>{
-      replyTo = { key: m.key, text: m.text, senderName: m.senderName };
-      $replyPreview.removeClass('hidden'); $replySummary.text((m.text||'').slice(0,200));
-    });
-    const saveBtn = $('<button class="text-xs px-2 py-1 rounded-md border border-white/5">Save</button>').on('click', async ()=>{
-      await db.ref(`notes/${currentUser.uid}`).push({ text:m.text, chatId: currentChatId, at: Date.now() });
-      alert('Saved to notes');
-    });
-    actions.append(copyBtn, replyBtn, saveBtn);
-    $messages.children().last().append(actions);
-  }
+  if (isGameOver()) declareWinner();
 }
 
-/* Update message DOM */
-function updateMessageDOM(key, data){
-  const node = $(`[data-msg="${key}"]`)[0];
-  if(!node) return;
-  $(node).find('.msg-content').text(data.text || '');
-  $(node).find('.msg-meta').text(`${data.senderName||''} • ${fmtTime(data.timestamp)}`);
-}
-
-/* Send message: push, pending job, immediate proxy attempt */
-$sendBtn.on('click', sendMessage);
-$messageInput.on('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
-$cancelReply.on('click', ()=> { replyTo = null; $replyPreview.addClass('hidden'); });
-
-async function sendMessage(){
-  const txt = $messageInput.val().trim();
-  if(!txt || !currentUser || !currentChatId) return;
-  const msgObj = {
-    senderId: currentUser.uid,
-    senderName: currentUser.displayName || currentUser.email,
-    text: txt,
-    timestamp: Date.now(),
-    status: 'Sent'
+function checkForCompletedBoxes(row, col) {
+  let completed = false;
+  const tryBox = (r, c) => {
+    const top    = `${r-1}-${c}`, bottom = `${r+1}-${c}`,
+          left   = `${r}-${c-1}`, right  = `${r}-${c+1}`;
+    if ([top, bottom, left, right].every(l => lines.has(l))) {
+      const box = document.querySelector(`.box[data-row="${r}"][data-col="${c}"]`);
+      if (!box.classList.contains("player-1") && !box.classList.contains("player-2")) {
+        box.classList.add(currentPlayer === 1 ? "player-1" : "player-2");
+        box.textContent = currentPlayer;
+        scores[currentPlayer]++;
+        completed = true;
+      }
+    }
   };
-  if(replyTo){ msgObj.replyTo = replyTo; replyTo = null; $replyPreview.addClass('hidden'); }
-  const msgRef = await db.ref(`chats/${currentUser.uid}/${currentChatId}`).push(msgObj);
-  await db.ref(`userChats/${currentUser.uid}/${currentChatId}`).update({ lastText: txt, lastAt: Date.now() });
+  if (row % 2 === 0) {
+    tryBox(row-1, col);
+    tryBox(row+1, col);
+  } else {
+    tryBox(row, col-1);
+    tryBox(row, col+1);
+  }
+  score1El.textContent = scores[1];
+  score2El.textContent = scores[2];
+  return completed;
+}
 
-  $messageInput.val(''); autosize.update($('#messageInput'));
-  // create pending job for worker (if proxy fails)
-  const pendingRef = await db.ref(`pending/${currentUser.uid}`).push({
-    chatId: currentChatId,
-    messageId: msgRef.key,
-    text: txt,
-    createdAt: Date.now(),
-    attempts: 0
-  });
+function updateStatus() {
+  if (gameOver) return;
+  status.textContent = `Player ${currentPlayer}'s turn (${currentPlayer===1?"Blue":"Red (AI)"})`;
+}
 
-  // Build context (last N messages)
-  const ctxN = parseInt($contextLen.val() || $settingsContext.val() || 20, 10);
-  const snap = await db.ref(`chats/${currentUser.uid}/${currentChatId}`).orderByChild('timestamp').limitToLast(ctxN).once('value');
-  const messages = [];
-  snap.forEach(s=>{
-    const mm = s.val();
-    const role = mm.senderId === currentUser.uid ? 'user' : 'assistant';
-    messages.push({ role, content: mm.text || '' });
-  });
-  const payload = { messages: [{ role:'system', content: 'You are AiVA, a concise helpful assistant.' }, ...messages], model: $modelSelect.val() || $settingsModel.val() };
+function isGameOver() {
+  return scores[1] + scores[2] === (boardSize-1)*(boardSize-1);
+}
 
-  // Immediate proxy attempt
-  try{
-    const resp = await fetch(SERVER_BASE + '/api/query', { method:'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if(resp.ok){
-      const json = await resp.json();
-      const replyText = json.replyText || (json.result && (json.result.choices?.[0]?.message?.content || json.result.output?.[0]?.content)) || 'No reply';
-      await db.ref(`chats/${currentUser.uid}/${currentChatId}`).push({
-        senderId: 'aiva_bot',
-        senderName: 'AiVA',
-        text: replyText,
-        timestamp: Date.now(),
-        status: 'Sent',
-        source: 'proxy'
-      });
-      await pendingRef.remove();
-    } else {
-      console.warn('Proxy returned non-ok', resp.status);
+function declareWinner() {
+  gameOver = true;
+  const winner = scores[1]>scores[2]?"Blue (You)":"Red (AI)";
+  status.textContent = `${winner} is the winner!`;
+}
+
+function restartGame() {
+  lines.clear();
+  scores = {1:0,2:0};
+  currentPlayer = 1;
+  gameOver = false;
+  createBoard();
+  updateStatus();
+  score1El.textContent = 0;
+  score2El.textContent = 0;
+}
+
+restartButton.addEventListener("click", restartGame);
+exportBtn.addEventListener("click", () => {
+  const state = { boardSize, lines: Array.from(lines), scores, currentPlayer };
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'dotbox-state.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+createBoard();
+updateStatus();
+
+/* ========== Helpers for box-line counting (used by server heuristics/fallback) ========== */
+function countBoxLines(r, c) {
+  const top    = `${r-1}-${c}`, bottom = `${r+1}-${c}`,
+        left   = `${r}-${c-1}`, right  = `${r}-${c+1}`;
+  return [top, bottom, left, right].filter(l => lines.has(l)).length;
+}
+function boxClaimed(row,col){
+  const box = document.querySelector(`.box[data-row="${row}"][data-col="${col}"]`);
+  return box && (box.classList.contains("player-1") || box.classList.contains("player-2"));
+}
+
+/* ========== Applying Bot move (unchanged logic) ========== */
+async function applyBotMove(choice) {
+  if (!choice || typeof choice.row !== 'number' || typeof choice.col !== 'number') {
+    console.warn('invalid bot move suggestion', choice);
+    return fallbackApply();
+  }
+  const key = `${choice.row}-${choice.col}`;
+  // if invalid or already taken -> fallback apply later
+  if (lines.has(key) || choice.row < 0) {
+    return fallbackApply();
+  }
+  lines.add(key);
+  const el = document.querySelector(`.line[data-row="${choice.row}"][data-col="${choice.col}"]`);
+  if (el) {
+    el.classList.add("active");
+    el.style.backgroundColor = "#e94e77";
+  }
+  const gotBox = checkForCompletedBoxes(choice.row, choice.col);
+  if (!gotBox) {
+    currentPlayer = 1;
+    updateStatus();
+  } else {
+    updateStatus();
+    setTimeout(makeBotMove, 700);
+  }
+  if (isGameOver()) declareWinner();
+}
+
+async function fallbackApply() {
+  // pick first available
+  const size = boardSize*2-1;
+  for (let r=0;r<size;r++){
+    for (let c=0;c<size;c++){
+      const k = `${r}-${c}`;
+      if ((r%2===0||c%2===0) && !(r%2===0 && c%2===0) && !lines.has(k)) {
+        lines.add(k);
+        const el = document.querySelector(`.line[data-row="${r}"][data-col="${c}"]`);
+        if (el) { el.classList.add("active"); el.style.backgroundColor = "#e94e77"; }
+        const gotBox = checkForCompletedBoxes(r,c);
+        if (!gotBox) { currentPlayer = 1; updateStatus(); } else { updateStatus(); setTimeout(makeBotMove,700); }
+        if (isGameOver()) declareWinner();
+        return;
+      }
     }
-  } catch(err){
-    console.warn('Proxy failed, leaving pending for worker', err);
   }
 }
 
-/* Settings modal */
-$settingsBtn.on('click', ()=> $settingsModal.removeClass('hidden'));
-$closeSettings.on('click', ()=> $settingsModal.addClass('hidden'));
-$settingsModel.val($modelSelect.val());
-$settingsContext.val($contextLen.val());
-$('#closeSettings').on('click', ()=> {
-  $settingsModal.addClass('hidden');
-  $modelSelect.val($settingsModel.val());
-  $contextLen.val($settingsContext.val());
-});
+/* ========== makeBotMove: calls configured AI endpoint ========== */
+async function makeBotMove(){
+  if (gameOver) return;
+  currentPlayer = 2;
+  updateStatus();
+  thinkingOverlay.style.display = 'flex';
 
-/* Regenerate (puts last user's message into input) */
-$('#btnRegenerate').on('click', async ()=>{
-  if(!currentUser || !currentChatId) return;
-  const snap = await db.ref(`chats/${currentUser.uid}/${currentChatId}`).orderByChild('timestamp').limitToLast(200).once('value');
-  let lastUser = null;
-  snap.forEach(s=>{ const v=s.val(); if(v.senderId === currentUser.uid) lastUser = { key:s.key, ...v }; });
-  if(lastUser){ $messageInput.val(lastUser.text); autosize.update($('#messageInput')); $messageInput.focus(); }
-});
+  const payload = { boardSize, lines: Array.from(lines), scores, currentPlayer };
 
-/* Clear chat */
-$('#btnClear').on('click', async ()=>{
-  if(!confirm('Clear this chat? This will delete messages and chat entry.')) return;
-  if(!currentUser || !currentChatId) return;
-  await db.ref(`chats/${currentUser.uid}/${currentChatId}`).remove();
-  await db.ref(`userChats/${currentUser.uid}/${currentChatId}`).remove();
-  $messages.empty(); renderChatList();
-});
+  try {
+    const resp = await fetch(AI_MOVE_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) throw new Error('AI service returned '+resp.status);
+    const data = await resp.json();
+    thinkingOverlay.style.display = 'none';
+    // data expected: { row, col, explanation }
+    await applyBotMove({row: data.row, col: data.col});
+    // optionally show explanation in console
+    if (data.explanation) console.info('AI:', data.explanation);
+  } catch (err) {
+    thinkingOverlay.style.display = 'none';
+    console.error('AI call failed:', err);
+    // fallback apply
+    await fallbackApply();
+  }
+}
 
-/* Search chats */
-$searchInput.on('input', function(){ const q = $(this).val().toLowerCase(); $chatList.children().each(function(){ const t = $(this).find('.text-sm').text().toLowerCase(); $(this).toggle(t.includes(q)); }); });
-
-/* Utility: mark seen (simple) */
-async function markSeen(){ if(!currentUser || !currentChatId) return; const ref = db.ref(`chats/${currentUser.uid}/${currentChatId}`); const snap = await ref.orderByChild('status').equalTo('Delivered').once('value'); snap.forEach(s=> { const m = s.val(); if(m.senderId && m.senderId !== currentUser.uid) s.ref.update({ status:'Seen' }); }); }
-
-/* Startup: init highlight */
-$(function(){ if(window.hljs) hljs.configure({}); });
-
-/* Prevent overflow: keep everything inside containers (CSS handles) */
-
-/* EOF */
+/* optional: disable right-click if you want to mimic original */
+document.addEventListener('contextmenu', e => {});
 </script>
-
 </body>
-  </html>
+</html>
