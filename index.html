@@ -216,15 +216,16 @@
 <script>
 /* =================== CONFIG (replace with real values) =================== */
 const FIREBASE_CONFIG = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
-  databaseURL: "YOUR_FIREBASE_DATABASE_URL",
-  projectId: "YOUR_FIREBASE_PROJECT_ID",
-  appId: "YOUR_FIREBASE_APP_ID"
+  apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
+  authDomain: "aiva-9abbb.firebaseapp.com",
+  projectId: "aiva-9abbb",
+  storageBucket: "aiva-9abbb.firebasestorage.app",
+  messagingSenderId: "565052629821",
+  appId: "1:565052629821:web:4a0083611ff11011da1b54"
 };
 // Your proxy server (Render) that securely holds HF_TOKEN / OPENAI keys.
 // Must accept POST /api/query with JSON payload { messages: [...], model: '...' }
-const SERVER_BASE = "https://YOUR-PROXY-URL.example.com";
+const SERVER_BASE = "https://aiva-gwm9.onrender.com;
 /* ====================================================================== */
 
 firebase.initializeApp(FIREBASE_CONFIG);
