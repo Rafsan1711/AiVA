@@ -1,927 +1,583 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="antialiased">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AiVA — AI Virtual Assistant</title>
 
-  <!-- Tailwind CSS (CDN) -->
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- Libraries -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/vs2015.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/autosize.js/4.0.2/autosize.min.js"></script>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Local font placeholder -->
   <style>
     @font-face {
       font-family: 'Balsamiq Sans';
       src: url('fonts/BalsamiqSans-Regular.ttf') format('truetype');
-      font-weight: 400;
-      font-style: normal;
       font-display: swap;
     }
     :root{
-      --bg: #071019;
-      --panel: #0f1b20;
-      --muted: #9fb0b7;
-      --accent: #4fb6ff;
-      --accent2: #20c997;
-      --card: #0b1316;
+      --bg:#071017;
+      --panel:#0b1518;
+      --card:#0f191b;
+      --muted:#98b1b7;
+      --accent-blue:#4a90e2;
+      --accent-green:#4ade80;
+      --glass: rgba(255,255,255,0.03);
+      --text:#eaf3fb;
     }
-    html,body,#app{height:100%}
-    body { font-family: 'Balsamiq Sans', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,var(--bg),#041018); color: #e6eef3; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-    pre { background:#07141a; padding:12px; border-radius:8px; overflow:auto; }
+    html,body,#root{height:100%}
+    body{
+      margin:0; background:linear-gradient(180deg,var(--bg),#031116 140%);
+      font-family:'Balsamiq Sans', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color:var(--text);
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    /* scrollbars */
+    .thin-scroll::-webkit-scrollbar{width:8px;height:8px}
+    .thin-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.03);border-radius:8px}
+    /* chat bubbles */
+    .msg-user{background:linear-gradient(90deg,var(--accent-blue),var(--accent-green)); color:#021; border-radius:14px 14px 4px 14px;}
+    .msg-ai{background:var(--card); color:var(--text); border-radius:14px 14px 14px 4px;}
+    pre.code { background:#031018;padding:.6rem;border-radius:.5rem;overflow:auto;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;font-size:.92rem;}
+    /* ensure no overflow */
+    .no-overflow { overflow:hidden; }
+    .clamp-card { max-width: 100%; word-wrap: break-word; white-space: pre-wrap; }
+    /* responsive */
+    @media (max-width:900px){
+      .layout { grid-template-columns: 1fr; grid-auto-rows: auto 1fr auto; }
+      .sidebar { height:230px; overflow:auto; }
+    }
+    /* small utilities */
+    .glass { background:var(--glass); border:1px solid rgba(255,255,255,0.03); }
   </style>
-
-  <!-- Prism.js (for code blocks in preview) -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-
-  <!-- Chart.js (kept for future use) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
-  <meta name="description" content="AiVA — Claude-style AI Virtual Assistant (frontend). Replace placeholders for SERVER_BASE and Firebase config.">
 </head>
+
 <body>
-  <div id="app" class="min-h-screen flex flex-col">
-
-    <!-- TOPBAR (mobile) -->
-    <header class="sm:hidden flex items-center justify-between px-4 py-3 bg-[var(--panel)] border-b border-neutral-800">
-      <div class="flex items-center gap-3">
-        <button id="mobileMenuBtn" class="p-2 rounded-md bg-white/5">☰</button>
-        <div class="text-lg font-semibold">AiVA</div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button id="mobilePreviewToggle" class="p-2 rounded-md bg-white/5">Preview</button>
-      </div>
-    </header>
-
-    <div id="topWarning" class="hidden bg-yellow-600 text-black px-4 py-2 text-sm">Warning: SERVER_BASE not configured — chat will fail until you set your backend URL.</div>
-
-    <div class="flex flex-1">
-      <!-- SIDEBAR -->
-      <aside id="sidebar" class="hidden sm:flex sm:w-72 lg:w-80 bg-[rgba(6,12,14,0.95)] border-r border-neutral-800 p-4 flex-col gap-4">
+  <div id="root" class="min-h-screen p-4 layout grid grid-cols-[320px_1fr] gap-4">
+    <!-- SIDEBAR -->
+    <aside class="sidebar glass rounded-xl p-4 flex flex-col shadow-lg overflow-hidden">
+      <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <button id="logoBtn" class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center">
-            <img id="logoImg" src="ai.png" alt="AiVA" class="w-full h-full object-cover" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend','<div class=\\'w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-teal-400 flex items-center justify-center text-xl\\'>🤖</div>')">
-          </button>
+          <div class="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-black"
+               style="background:linear-gradient(90deg,var(--accent-blue),var(--accent-green));">AiVA</div>
           <div>
-            <div class="text-2xl font-semibold tracking-tight">AiVA</div>
+            <div class="text-lg font-semibold leading-4">AiVA</div>
             <div class="text-xs text-[var(--muted)]">AI Virtual Assistant</div>
           </div>
         </div>
+        <div class="flex items-center gap-2">
+          <button id="newChat" class="px-3 py-1 rounded-md bg-[var(--accent-green)] text-black text-sm">New</button>
+          <button id="toggleSidebar" class="md:hidden text-[var(--muted)]">☰</button>
+        </div>
+      </div>
 
-        <!-- AUTH (compact in sidebar for desktop) -->
-        <div id="authAreaSidebar" class="space-y-3">
-          <div id="signedOutSidebar">
-            <div class="text-sm text-[var(--muted)]">Welcome — please sign in or create an account</div>
-            <div class="flex gap-2 mt-2">
-              <button id="gotoSignIn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Sign in</button>
-              <button id="gotoSignUp" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Sign up</button>
-            </div>
-          </div>
+      <div class="mt-3">
+        <div class="flex items-center gap-2 bg-[rgba(255,255,255,0.02)] rounded-md px-3 py-2">
+          <i class="fa fa-search text-[var(--muted)]"></i>
+          <input id="searchInput" placeholder="Search chats..." class="bg-transparent outline-none text-sm w-full text-[var(--text)]" />
+        </div>
+      </div>
 
-          <div id="signedInSidebar" class="hidden">
-            <!-- User card (Google name + profile) -->
-            <div id="userCard" class="bg-[#07141a] rounded p-3 flex items-center gap-3">
-              <img id="userPic" src="" alt="avatar" class="w-12 h-12 rounded-full object-cover hidden">
-              <div>
-                <div id="userName" class="font-medium">You</div>
-                <div id="userEmail" class="text-xs text-[var(--muted)]">email</div>
-                <div class="mt-2">
-                  <button id="openProfileBtn" class="text-xs px-3 py-1 rounded bg-white/5">Profile</button>
-                </div>
-              </div>
-            </div>
+      <div id="chatList" class="mt-3 flex-1 overflow-auto thin-scroll space-y-2">
+        <!-- chat items injected -->
+      </div>
 
-            <div class="mt-3 flex gap-2">
-              <button id="newConvBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">New Chat</button>
-              <button id="logoutBtn" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Logout</button>
-            </div>
-          </div>
+      <!-- bottom profile card -->
+      <div class="mt-3 pt-3 border-t border-white/5 flex items-center gap-3">
+        <img id="profilePic" src="" class="w-12 h-12 rounded-full object-cover bg-slate-700" alt="avatar" />
+        <div class="flex-1 min-w-0">
+          <div id="profileName" class="text-sm font-semibold truncate">Not signed</div>
+          <div id="profileEmail" class="text-xs text-[var(--muted)] truncate">—</div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <button id="signinBtn" class="text-xs text-[var(--muted)] px-2 py-1 rounded-md border border-white/5">Sign in</button>
+          <button id="signoutBtn" class="text-xs bg-red-500 px-2 py-1 rounded-md text-black hidden">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="bg-[var(--card)] rounded-xl flex flex-col overflow-hidden shadow-lg">
+      <!-- top -->
+      <div class="flex items-center justify-between p-4 border-b border-white/5">
+        <div>
+          <div id="chatHeaderTitle" class="text-lg font-semibold">Select a chat</div>
+          <div id="chatHeaderSub" class="text-xs text-[var(--muted)]">AiVA • Context-aware assistant</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="modelSelect" class="rounded-md p-2 bg-transparent border border-white/5 text-sm">
+            <option value="openai/gpt-oss-120b:together">gpt-oss-120b</option>
+            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+          </select>
+          <input id="contextLen" type="number" min="1" max="80" value="20" class="w-16 rounded-md p-2 bg-transparent border border-white/5 text-sm" title="Context messages" />
+          <button id="settingsBtn" class="text-[var(--muted)] px-3 py-1 rounded-md border border-white/5">Settings</button>
+        </div>
+      </div>
+
+      <!-- messages -->
+      <div id="messages" class="flex-1 p-4 overflow-auto thin-scroll space-y-4">
+        <!-- messages appended -->
+      </div>
+
+      <!-- input area -->
+      <div class="p-3 border-t border-white/5 bg-gradient-to-t from-transparent to-[rgba(255,255,255,0.01)]">
+        <div id="replyPreview" class="hidden mb-2 bg-[rgba(255,255,255,0.02)] p-2 rounded-md flex justify-between items-center text-sm">
+          <div id="replySummary" class="text-[var(--muted)] truncate"></div>
+          <button id="cancelReply" class="text-[var(--muted)]">✕</button>
         </div>
 
-        <!-- SEARCH -->
-        <input id="searchInput" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Search conversations..." />
-
-        <!-- CONVERSATIONS -->
-        <div id="conversations" class="flex-1 overflow-auto space-y-2 py-2"></div>
-      </aside>
-
-      <!-- MAIN -->
-      <main class="flex-1 flex flex-col">
-        <!-- HEADER (desktop) -->
-        <div class="hidden sm:flex px-6 py-4 border-b border-neutral-800 items-center justify-between bg-[var(--panel)]">
-          <div class="flex items-center gap-4">
-            <div>
-              <div class="text-xl font-semibold">AiVA</div>
-              <div class="text-xs text-[var(--muted)]">Claude-style UI — cleaner and responsive</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <button id="settingsBtn" class="px-3 py-1 rounded border border-neutral-700 text-[var(--muted)] text-sm">Settings</button>
-          </div>
-        </div>
-
-        <!-- LAYOUT -->
-        <div class="flex-1 p-4 md:p-6 gap-4 flex flex-col md:flex-row">
-          <!-- MESSAGES -->
-          <section class="flex-1 flex flex-col min-h-0">
-            <div id="chatHeader" class="flex items-center gap-4 mb-3">
-              <div class="flex-1">
-                <div id="activeConvTitle" class="text-lg font-semibold">Select or start a conversation</div>
-                <div id="typingIndicator" class="text-sm text-[var(--accent)] hidden">AiVA is typing…</div>
-              </div>
-              <div class="hidden sm:flex items-center gap-2">
-                <button id="attachBtnTop" class="px-3 py-1 rounded border border-neutral-700 text-sm">Attach</button>
-                <button id="newConvBtnTop" class="px-3 py-1 rounded bg-[var(--accent)] text-black text-sm">New Chat</button>
-              </div>
-            </div>
-
-            <div id="messages" class="flex-1 p-4 rounded-lg bg-[var(--card)] overflow-auto space-y-3 min-h-[200px]"></div>
-
-            <!-- Reply preview -->
-            <div id="replyPreview" class="hidden mt-2 bg-[#0f1f22] border-l-4 border-[var(--accent2)] px-3 py-2 rounded">
-              <div class="flex justify-between items-center text-sm text-[var(--muted)]">
-                <div id="replyMeta">Replying to <strong id="replyAuthor"></strong></div>
-                <button id="cancelReply" class="text-xs text-[var(--muted)]">×</button>
-              </div>
-              <div id="replyText" class="text-sm mt-1 text-[#dbe7ea]"></div>
-            </div>
-
-            <div class="mt-4 flex items-center gap-3">
-              <textarea id="messageInput" rows="2" class="flex-1 px-3 py-2 rounded bg-[#07141a] border border-neutral-800 resize-none" placeholder="Ask AiVA anything... (English)"></textarea>
-              <div class="flex flex-col gap-2">
-                <button id="sendBtn" class="px-4 py-2 rounded bg-[var(--accent)] text-black font-semibold">Send</button>
-                <button id="attachBtn" class="px-4 py-2 rounded border border-neutral-700 text-[var(--muted)]">Attach</button>
-              </div>
-            </div>
-          </section>
-
-          <!-- RIGHT TOOLS (hidden on small screens, toggled via mobilePreviewToggle) -->
-          <aside id="rightPanel" class="hidden md:flex md:w-96 lg:w-80 flex-col gap-4">
-            <div class="rounded-lg bg-[var(--card)] p-4">
-              <div class="font-semibold mb-2">Tools</div>
-              <div class="flex flex-col gap-2">
-                <button id="showCodeBtn" class="py-2 rounded bg-[#0b1a1f] text-sm">Code Playground</button>
-              </div>
-            </div>
-
-            <div id="previewPanel" class="rounded-lg bg-[var(--card)] p-4 flex-1 overflow-auto">
-              <div id="previewInner" class="text-[var(--muted)] text-sm">Preview / Code will appear here. Attachments are a placeholder — click Attach to see status.</div>
-            </div>
-          </aside>
-        </div>
-
-      </main>
-    </div>
-
-    <!-- AUTH FULLSCREEN PANELS (separate Sign in & Sign up screens) -->
-    <div id="authOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 hidden">
-      <div class="w-full max-w-2xl mx-4 bg-[var(--panel)] rounded-lg p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 id="authTitle" class="text-xl font-semibold">Sign in</h2>
-          <button id="closeAuth" class="text-[var(--muted)]">✕</button>
-        </div>
-
-        <div id="signInPanel">
-          <div class="space-y-3">
-            <input id="signinEmail" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Email" type="email" />
-            <input id="signinPassword" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Password" type="password" />
-            <div class="flex gap-2">
-              <button id="signinBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Sign in</button>
-              <button id="gotoSignUp2" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Create account</button>
-            </div>
-            <div class="flex items-center gap-2">
-              <button id="googleBtn" class="w-full py-2 rounded bg-white/10 text-sm">Sign in with Google</button>
-            </div>
-            <div class="flex items-center justify-between text-xs text-[var(--muted)]">
-              <button id="forgotPassBtn" class="underline">Forgot password?</button>
-              <div id="authError" class="text-xs text-red-400"></div>
-            </div>
-          </div>
-        </div>
-
-        <div id="signUpPanel" class="hidden">
-          <div class="space-y-3">
-            <input id="signupEmail" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Email" type="email" />
-            <input id="signupPassword" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Password" type="password" />
-            <div class="flex items-center gap-2">
-              <input id="acceptTerms" type="checkbox" class="accent-[var(--accent)]" />
-              <label for="acceptTerms" class="text-xs text-[var(--muted)]">I accept <a id="termsLink" href="#" class="text-[var(--accent)] underline">Terms</a> & <a id="privacyLink" href="#" class="text-[var(--accent)] underline">Privacy</a></label>
-            </div>
-            <div class="flex gap-2">
-              <button id="signupBtn" class="flex-1 py-2 rounded bg-[var(--accent)] text-black font-semibold text-sm">Create account</button>
-              <button id="gotoSignIn2" class="flex-1 py-2 rounded border border-neutral-700 text-sm">Already have an account</button>
-            </div>
-            <div class="text-xs text-[var(--muted)]">After sign up an email verification will be sent.</div>
-            <div id="authErrorSign" class="text-xs text-red-400 mt-1"></div>
+        <div class="flex gap-3">
+          <textarea id="messageInput" rows="1" placeholder="Ask AiVA — Enter to send, Shift+Enter for newline" class="flex-1 resize-none bg-transparent p-3 rounded-md border border-white/5 focus:outline-none text-[var(--text)] clamp-card"></textarea>
+          <div class="flex flex-col gap-2 justify-end">
+            <button id="sendBtn" class="bg-[var(--accent-blue)] px-4 py-2 rounded-md text-black font-semibold">Send</button>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- SETTINGS MODAL -->
-    <div id="settingsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
-      <div class="w-[720px] bg-[var(--panel)] rounded p-5">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="text-lg font-semibold">Settings</h3>
-          <button id="closeSettings" class="text-[var(--muted)]">✕</button>
-        </div>
-        <div class="space-y-3 text-[var(--muted)]">
-          <div>
-            <label class="block text-sm mb-1">Model (proxy)</label>
-            <select id="modelSelect" class="w-full bg-[#07141a] px-3 py-2 rounded border border-neutral-800">
-              <option value="openai/gpt-3.5-turbo">gpt-3.5-turbo</option>
-              <option value="openai/gpt-4o-mini">gpt-4o-mini</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm mb-1">Max messages per conversation</label>
-            <input id="maxMessages" type="number" min="3" max="200" value="20" class="w-full bg-[#07141a] px-3 py-2 rounded border border-neutral-800" />
-            <div class="text-xs text-[var(--muted)] mt-1">When a conversation reaches this limit, new messages are blocked.</div>
-          </div>
-
-          <div>
-            <label class="block text-sm mb-1">Auto-save conversation</label>
-            <input id="autoSave" type="checkbox" class="accent-[var(--accent)]" checked />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button id="changePassBtn" class="px-3 py-2 rounded bg-white/5 text-sm">Change password</button>
-            <button id="sendVerifyBtn" class="px-3 py-2 rounded bg-white/5 text-sm">Send verification email</button>
-          </div>
-
-          <div class="flex justify-between items-center mt-3">
-            <div class="text-xs text-[var(--muted)]">Signed in as <span id="settingsUserEmail" class="font-medium"></span></div>
-            <div class="flex gap-2">
-              <button id="saveSettings" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Save</button>
-              <button id="logoutSettings" class="px-4 py-2 rounded border border-neutral-700">Logout</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ABOUT / LOGO CLICK MODAL -->
-    <div id="aboutModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
-      <div class="w-full max-w-md bg-[var(--panel)] rounded p-5 text-center">
-        <h3 class="text-lg font-semibold mb-2">About AiVA</h3>
-        <p class="text-[var(--muted)] text-sm mb-4">AiVA — your Claude-style AI assistant. Click the logo to open this dialog. Replace ai.png in project root to change logo.</p>
-        <div><button onclick="closeModal('aboutModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button></div>
-      </div>
-    </div>
-
-    <!-- CHANGE PASSWORD MODAL -->
-    <div id="changePassModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
-      <div class="w-full max-w-md bg-[var(--panel)] rounded p-5">
-        <h3 class="text-lg font-semibold mb-3">Change password</h3>
-        <div class="space-y-3">
-          <input id="currentPass" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="Current password" type="password" />
-          <input id="newPass" class="w-full px-3 py-2 rounded bg-[#07141a] border border-neutral-800 text-sm" placeholder="New password" type="password" />
-          <div id="changePassError" class="text-xs text-red-400"></div>
-          <div class="flex justify-end gap-2">
-            <button onclick="closeModal('changePassModal')" class="px-3 py-2 rounded border">Cancel</button>
-            <button id="doChangePass" class="px-3 py-2 rounded bg-[var(--accent)] text-black">Change</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FORGOT PASSWORD NOTICE -->
-    <div id="forgotNotice" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
-      <div class="w-full max-w-md bg-[var(--panel)] rounded p-5 text-center">
-        <h3 class="text-lg font-semibold mb-2">Reset password</h3>
-        <p class="text-[var(--muted)] text-sm mb-4">A password reset link will be sent to the email you entered on the sign in form.</p>
-        <div class="flex justify-center gap-2">
-          <button onclick="closeModal('forgotNotice')" class="px-4 py-2 rounded border">OK</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- TERMS & PRIVACY MODALS -->
-    <div id="termsModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-40">
-      <div class="w-11/12 max-w-3xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="text-lg font-semibold">Terms & Conditions</h3>
-          <button onclick="closeModal('termsModal')" class="text-[var(--muted)]">✕</button>
-        </div>
-        <div class="text-sm text-[var(--muted)] space-y-3">
-          <p>Welcome to AiVA. By using our service you agree to these Terms & Conditions. Please read carefully.</p>
-          <h4 class="font-medium">1. Service</h4>
-          <p>AiVA is a conversational AI assistant intended for informational and productivity uses. We may provide automated responses generated by models; these are not guaranteed to be accurate and should not be relied upon for professional advice.</p>
-          <p class="text-xs text-[var(--muted)]">(This is a template. Replace with your organization's legally reviewed terms before production.)</p>
-        </div>
-        <div class="mt-4 text-right">
-          <button onclick="closeModal('termsModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="privacyModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-40">
-      <div class="w-11/12 max-w-3xl bg-[var(--panel)] rounded p-6 overflow-auto max-h-[80vh]">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="text-lg font-semibold">Privacy Policy</h3>
-          <button onclick="closeModal('privacyModal')" class="text-[var(--muted)]">✕</button>
-        </div>
-        <div class="text-sm text-[var(--muted)] space-y-3">
-          <p>AiVA respects your privacy. This policy describes what we collect, how we use it, and your rights.</p>
-          <h4 class="font-medium">1. Data we collect</h4>
-          <ul class="list-disc ml-5">
-            <li>Account information: email, display name, profile picture (if using Google).</li>
-            <li>Messages and conversation content submitted to the service for processing.</li>
-          </ul>
-          <p class="text-xs text-[var(--muted)]">(This is a sample privacy policy. For production, use a privacy policy tailored to your jurisdiction and reviewed by counsel.)</p>
-        </div>
-        <div class="mt-4 text-right">
-          <button onclick="closeModal('privacyModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ATTACHMENT / COMING SOON MODAL -->
-    <div id="comingModal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
-      <div class="w-full max-w-md bg-[var(--panel)] rounded p-5 text-center">
-        <div class="text-lg font-semibold mb-2">Feature coming soon</div>
-        <div class="text-[var(--muted)] text-sm mb-4">Attachments and file parsing will be available in a future update.</div>
-        <div class="flex gap-2 justify-center">
-          <button onclick="closeModal('comingModal')" class="px-4 py-2 rounded bg-[var(--accent)] text-black">OK</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- CONTEXT MENU -->
-    <div id="contextMenu" class="absolute z-50 hidden bg-[var(--panel)] border border-neutral-800 rounded shadow">
-      <button id="ctxReply" class="block px-4 py-2 text-sm w-full text-left">Reply</button>
-      <button id="ctxDelete" class="block px-4 py-2 text-sm w-full text-left">Delete for me</button>
-      <button id="ctxDeleteAll" class="block px-4 py-2 text-sm w-full text-left">Delete for everyone</button>
-    </div>
-
+    </main>
   </div>
 
-  <script>
-    /* ========== CONFIG - replace placeholders ========== */
-    const SERVER_BASE = "https://aiva-gwm9.onrender.com"; // update this
-    const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
-  authDomain: "aiva-9abbb.firebaseapp.com",
-  projectId: "aiva-9abbb",
-  storageBucket: "aiva-9abbb.firebasestorage.app",
-  messagingSenderId: "565052629821",
-  appId: "1:565052629821:web:4a0083611ff11011da1b54"
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+    <div class="bg-[var(--panel)] rounded-lg p-6 w-11/12 max-w-md">
+      <h3 class="text-lg font-semibold mb-2">Sign in to AiVA</h3>
+      <div class="text-sm text-[var(--muted)] mb-4">Sign in with Google or Email/Password</div>
+      <div class="flex gap-2">
+        <button id="googleSign" class="flex-1 bg-white text-black rounded-md py-2">Sign in with Google</button>
+      </div>
+      <div class="mt-4 text-[var(--muted)] text-sm">Or Email</div>
+      <input id="authEmail" class="mt-2 w-full bg-transparent border border-white/5 rounded-md p-2" placeholder="Email" />
+      <input id="authPass" type="password" class="mt-2 w-full bg-transparent border border-white/5 rounded-md p-2" placeholder="Password" />
+      <div class="flex gap-2 mt-3">
+        <button id="emailSign" class="flex-1 bg-[var(--accent-green)] text-black rounded-md py-2">Sign in / Sign up</button>
+        <button id="closeAuth" class="flex-1 border border-white/5 rounded-md py-2">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERMS MODAL -->
+  <div id="termsModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-60">
+    <div class="bg-[var(--panel)] rounded-lg p-6 w-11/12 max-w-2xl">
+      <h3 class="text-lg font-semibold mb-2">Terms & Privacy</h3>
+      <div class="text-sm text-[var(--muted)] mb-4 max-h-56 overflow-auto thin-scroll">
+        <p><strong>Short summary:</strong> AiVA stores chat history to provide context and better replies. Do not share very sensitive personal info. You can delete chats anytime. For full terms & privacy add your legal text in server or docs.</p>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button id="declineTerms" class="px-3 py-1 rounded-md border border-white/5">Decline</button>
+        <button id="acceptTerms" class="px-3 py-1 rounded-md bg-[var(--accent-green)] text-black">Accept & Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-60">
+    <div class="bg-[var(--panel)] rounded-lg p-6 w-11/12 max-w-lg">
+      <h3 class="text-lg font-semibold mb-2">Settings</h3>
+      <div class="text-sm text-[var(--muted)] mb-4">Choose model and context length</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-[var(--muted)] block mb-1">Model</label>
+          <select id="settingModel" class="w-full rounded-md p-2 bg-transparent border border-white/5">
+            <option value="openai/gpt-oss-120b:together">gpt-oss-120b (default)</option>
+            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-[var(--muted)] block mb-1">Context messages</label>
+          <input id="settingContext" type="number" min="1" max="80" value="20" class="w-full rounded-md p-2 bg-transparent border border-white/5" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-4">
+        <button id="closeSettings" class="px-3 py-1 rounded-md border border-white/5">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- message template -->
+  <template id="tplMsg">
+    <div class="max-w-prose">
+      <div class="p-3 msg-content clamp-card"></div>
+      <div class="mt-1 text-xs text-[var(--muted)] msg-meta"></div>
+    </div>
+  </template>
+
+<script>
+/* =================== CONFIG (replace with real values) =================== */
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+  databaseURL: "YOUR_FIREBASE_DATABASE_URL",
+  projectId: "YOUR_FIREBASE_PROJECT_ID",
+  appId: "YOUR_FIREBASE_APP_ID"
 };
-    /* ================================================== */
+// Your proxy server (Render) that securely holds HF_TOKEN / OPENAI keys.
+// Must accept POST /api/query with JSON payload { messages: [...], model: '...' }
+const SERVER_BASE = "https://YOUR-PROXY-URL.example.com";
+/* ====================================================================== */
 
-    // show top warning if SERVER_BASE left as placeholder
-    document.addEventListener('DOMContentLoaded', ()=> {
-      if (SERVER_BASE.includes('YOUR_RENDER_BACKEND_URL')) {
-        document.getElementById('topWarning').classList.remove('hidden');
-      }
-    });
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.database();
 
-    // Initialize Firebase
-    firebase.initializeApp(FIREBASE_CONFIG);
-    const auth = firebase.auth();
+/* UI refs */
+const $chatList = $('#chatList');
+const $messages = $('#messages');
+const $messageInput = $('#messageInput');
+const $sendBtn = $('#sendBtn');
+const $newChatBtn = $('#newChat');
+const $signinBtn = $('#signinBtn');
+const $signoutBtn = $('#signoutBtn');
+const $authModal = $('#authModal');
+const $googleSign = $('#googleSign');
+const $emailSign = $('#emailSign');
+const $closeAuth = $('#closeAuth');
+const $authEmail = $('#authEmail');
+const $authPass = $('#authPass');
+const $profilePic = $('#profilePic');
+const $profileName = $('#profileName');
+const $profileEmail = $('#profileEmail');
+const $searchInput = $('#searchInput');
+const $termsModal = $('#termsModal');
+const $acceptTerms = $('#acceptTerms');
+const $declineTerms = $('#declineTerms');
+const $settingsModal = $('#settingsModal');
+const $settingsBtn = $('#settingsBtn');
+const $closeSettings = $('#closeSettings');
+const $modelSelect = $('#modelSelect');
+const $contextLen = $('#contextLen');
+const $replyPreview = $('#replyPreview');
+const $replySummary = $('#replySummary');
+const $cancelReply = $('#cancelReply');
+const $messageTpl = $('#tplMsg')[0].content;
+const $settingsModel = $('#settingModel');
+const $settingsContext = $('#settingContext');
 
-    // UI refs
-    const sidebar = document.getElementById('sidebar');
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobilePreviewToggle = document.getElementById('mobilePreviewToggle');
-    const rightPanel = document.getElementById('rightPanel');
+/* State */
+let currentUser = null;
+let currentChatId = null;
+let chatsIndex = {};
+let listeners = [];
+let replyTo = null;
 
-    const gotoSignIn = document.getElementById('gotoSignIn');
-    const gotoSignUp = document.getElementById('gotoSignUp');
-    const gotoSignUp2 = document.getElementById('gotoSignUp2');
-    const gotoSignIn2 = document.getElementById('gotoSignIn2');
-    const authOverlay = document.getElementById('authOverlay');
-    const closeAuth = document.getElementById('closeAuth');
-    const signInPanel = document.getElementById('signInPanel');
-    const signUpPanel = document.getElementById('signUpPanel');
-    const authTitle = document.getElementById('authTitle');
+/* Helpers */
+function tplMsg(){ return document.getElementById('tplMsg').content.firstElementChild.cloneNode(true); }
+function esc(s){ return s ? s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : ''; }
+function fmtTime(ts){ if(!ts) return ''; return new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+function uid(){ return 'id_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 
-    const signinBtn = document.getElementById('signinBtn');
-    const signupBtn = document.getElementById('signupBtn');
-    const googleBtn = document.getElementById('googleBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const newConvBtn = document.getElementById('newConvBtn');
-    const newConvBtnTop = document.getElementById('newConvBtnTop');
+/* Autosize textarea */
+autosize($('#messageInput'));
 
-    const signedOutSidebar = document.getElementById('signedOutSidebar');
-    const signedInSidebar = document.getElementById('signedInSidebar');
-    const userNameEl = document.getElementById('userName');
-    const userEmailEl = document.getElementById('userEmail');
-    const userPicEl = document.getElementById('userPic');
+/* Auth UI wiring */
+$signinBtn.on('click', ()=> $authModal.removeClass('hidden'));
+$closeAuth.on('click', ()=> $authModal.addClass('hidden'));
 
-    const conversationsEl = document.getElementById('conversations');
-    const messagesEl = document.getElementById('messages');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const searchInput = document.getElementById('searchInput');
-    const previewInner = document.getElementById('previewInner');
+$('#googleSign').on('click', async ()=>{
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try{ await auth.signInWithPopup(provider); $authModal.addClass('hidden'); } catch(e){ alert(e.message); }
+});
+$('#emailSign').on('click', async ()=>{
+  const email = $authEmail.val().trim(), pass = $authPass.val();
+  if(!email||!pass) return alert('Provide email and password');
+  try{ await auth.signInWithEmailAndPassword(email, pass); $authModal.addClass('hidden'); }
+  catch(e){
+    try{ await auth.createUserWithEmailAndPassword(email, pass); $authModal.addClass('hidden'); }
+    catch(err){ alert(err.message); }
+  }
+});
+$signoutBtn.on('click', ()=> auth.signOut());
 
-    const showCodeBtn = document.getElementById('showCodeBtn');
-    const attachBtn = document.getElementById('attachBtn');
-    const attachBtnTop = document.getElementById('attachBtnTop');
+/* Auth state */
+auth.onAuthStateChanged(async user=>{
+  currentUser = user;
+  if(user){
+    $signinBtn.hide(); $signoutBtn.show();
+    $profilePic.attr('src', user.photoURL || '');
+    $profileName.text(user.displayName || user.email);
+    $profileEmail.text(user.email || '');
+    await afterSignIn();
+  } else {
+    $signinBtn.show(); $signoutBtn.hide();
+    $profilePic.attr('src','');
+    $profileName.text('Not signed'); $profileEmail.text('—');
+    detachAll(); $chatList.empty(); $messages.empty(); $('#chatHeaderTitle').text('Select a chat');
+  }
+});
 
-    const termsLink = document.getElementById('termsLink');
-    const privacyLink = document.getElementById('privacyLink');
+/* After sign-in: presence, terms, load chats */
+async function afterSignIn(){
+  // presence
+  const pRef = db.ref(`users/${currentUser.uid}/presence`);
+  pRef.set({ online:true, lastSeen: Date.now() });
+  pRef.onDisconnect().set({ online:false, lastSeen: Date.now() });
 
-    const termsModal = document.getElementById('termsModal');
-    const privacyModal = document.getElementById('privacyModal');
+  // terms check
+  const metaSnap = await db.ref(`users/${currentUser.uid}/meta`).once('value');
+  const meta = metaSnap.val() || {};
+  if(!meta.acceptedTerms){
+    $termsModal.removeClass('hidden');
+  } else $termsModal.addClass('hidden');
 
-    const comingModal = document.getElementById('comingModal');
+  // chat list listener
+  setupChatList();
 
-    const logoBtn = document.getElementById('logoBtn');
+  // auto-create chat if empty
+  const listSnap = await db.ref(`userChats/${currentUser.uid}`).once('value');
+  if(!listSnap.exists()){
+    await createChat('Quick Chat');
+  } else {
+    const keys = Object.keys(listSnap.val()||{});
+    if(keys.length) openChat(keys[0]);
+  }
+}
 
-    // settings refs
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
-    const closeSettings = document.getElementById('closeSettings');
-    const saveSettings = document.getElementById('saveSettings');
-    const modelSelect = document.getElementById('modelSelect');
-    const maxMessagesInput = document.getElementById('maxMessages');
-    const autoSave = document.getElementById('autoSave');
-    const sendVerifyBtn = document.getElementById('sendVerifyBtn');
-    const changePassBtn = document.getElementById('changePassBtn');
-    const logoutSettings = document.getElementById('logoutSettings');
-    const settingsUserEmail = document.getElementById('settingsUserEmail');
+/* Terms modal actions */
+$acceptTerms.on('click', async ()=>{
+  await db.ref(`users/${currentUser.uid}/meta`).update({ acceptedTerms:true, acceptedAt: Date.now() });
+  $termsModal.addClass('hidden');
+});
+$declineTerms.on('click', ()=> { alert('You must accept terms to use AiVA'); });
 
-    // change pass modal
-    const changePassModal = document.getElementById('changePassModal');
-    const doChangePass = document.getElementById('doChangePass');
-    const currentPass = document.getElementById('currentPass');
-    const newPass = document.getElementById('newPass');
-    const changePassError = document.getElementById('changePassError');
+/* Setup chat list */
+function setupChatList(){
+  const ref = db.ref(`userChats/${currentUser.uid}`);
+  ref.off();
+  ref.on('value', snap=>{
+    chatsIndex = snap.val() || {};
+    renderChatList();
+  });
+}
 
-    // forgot password
-    const forgotPassBtn = document.getElementById('forgotPassBtn');
-    const forgotNotice = document.getElementById('forgotNotice');
+/* Render chat list */
+function renderChatList(){
+  $chatList.empty();
+  const items = Object.entries(chatsIndex || {});
+  items.sort((a,b)=> (b[1].lastAt||0) - (a[1].lastAt||0));
+  for(const [id, meta] of items){
+    const el = $(`
+      <div class="flex items-center gap-3 p-2 rounded-md hover:bg-white/2 cursor-pointer">
+        <div class="w-10 h-10 rounded-md flex items-center justify-center bg-[rgba(255,255,255,0.03)] text-sm font-semibold">${(meta.title||'Chat').slice(0,1).toUpperCase()}</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium truncate">${esc(meta.title||'Chat')}</div>
+          <div class="text-xs text-[var(--muted)] truncate">${esc((meta.lastText||'').slice(0,60))}</div>
+        </div>
+      </div>
+    `);
+    el.on('click', ()=> openChat(id));
+    $chatList.append(el);
+  }
+}
 
-    // other
-    const logoImg = document.getElementById('logoImg');
-    const aboutModal = document.getElementById('aboutModal');
+/* Create chat */
+$newChatBtn.on('click', ()=> createChat('Chat ' + (Object.keys(chatsIndex||{}).length + 1)));
+async function createChat(title){
+  const id = 'chat_' + Date.now().toString(36);
+  const meta = { title, createdAt: Date.now(), lastText:'', lastAt: Date.now() };
+  await db.ref(`userChats/${currentUser.uid}/${id}`).set(meta);
+  await db.ref(`chats/${currentUser.uid}/${id}`).set({});
+  openChat(id);
+}
 
-    // state
-    let currentUser = null;
-    let conversations = [];
-    let activeConversationId = null;
-    let pollHandle = null;
-    let replyTo = null;
-    let settings = { model: modelSelect.value, maxMessages: Number(maxMessagesInput.value), autoSave: autoSave.checked };
-    let currentMessages = []; // messages currently displayed for active conversation
-    let contextTargetMsgId = null;
+/* Detach listeners */
+function detachAll(){
+  listeners.forEach(l=> l.off && l.off());
+  listeners = [];
+}
+function clearMessages(){ $messages.empty(); }
 
-    // helpers
-    function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
-    function closeModal(id){ document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+/* Open chat and listen messages */
+async function openChat(chatId){
+  detachAll(); clearMessages();
+  currentChatId = chatId;
+  const metaSnap = await db.ref(`userChats/${currentUser.uid}/${chatId}`).once('value');
+  const meta = metaSnap.val() || {};
+  $('#chatHeaderTitle').text(meta.title || 'Chat');
+  $('#chatHeaderSub').text('AiVA • Context-aware assistant');
 
-    function el(tag, cls=''){ const d = document.createElement(tag); if(cls) d.className = cls; return d; }
-    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function truncate(s, n=120){ if(!s) return ''; return s.length>n ? s.slice(0,n)+'...' : s; }
+  const msgsRef = db.ref(`chats/${currentUser.uid}/${chatId}`);
+  msgsRef.off();
+  msgsRef.orderByChild('timestamp').limitToLast(500).on('child_added', snap => appendMessage({ key: snap.key, ...(snap.val()) }));
+  msgsRef.on('child_changed', snap => updateMessageDOM(snap.key, snap.val()));
+  listeners.push(msgsRef);
+}
 
-    // Mobile menu
-    mobileMenuBtn && mobileMenuBtn.addEventListener('click', ()=>{
-      if (sidebar.classList.contains('hidden')) sidebar.classList.remove('hidden'); else sidebar.classList.add('hidden');
-    });
-    mobilePreviewToggle && mobilePreviewToggle.addEventListener('click', ()=>{
-      if (rightPanel.classList.contains('hidden')) rightPanel.classList.remove('hidden'); else rightPanel.classList.add('hidden');
-    });
+/* Append message to DOM */
+function appendMessage(m){
+  if(document.querySelector(`[data-msg="${m.key}"]`)) return;
+  const node = tplMsg();
+  const box = node.querySelector('.msg-content');
+  const meta = node.querySelector('.msg-meta');
+  const isUser = (m.senderId === currentUser.uid);
+  box.classList.add(isUser ? 'msg-user' : 'msg-ai');
 
-    // Logo click -> about modal
-    logoBtn && logoBtn.addEventListener('click', ()=> openModal('aboutModal'));
-
-    // AUTH overlay controls (separate screens)
-    function showSignIn(){ authTitle.textContent = 'Sign in'; signInPanel.classList.remove('hidden'); signUpPanel.classList.add('hidden'); authOverlay.classList.remove('hidden'); authOverlay.classList.add('flex'); }
-    function showSignUp(){ authTitle.textContent = 'Create account'; signInPanel.classList.add('hidden'); signUpPanel.classList.remove('hidden'); authOverlay.classList.remove('hidden'); authOverlay.classList.add('flex'); }
-
-    gotoSignIn && gotoSignIn.addEventListener('click', showSignIn);
-    gotoSignUp && gotoSignUp.addEventListener('click', showSignUp);
-    gotoSignUp2 && gotoSignUp2.addEventListener('click', showSignUp);
-    gotoSignIn2 && gotoSignIn2.addEventListener('click', showSignIn);
-    closeAuth && closeAuth.addEventListener('click', ()=> authOverlay.classList.add('hidden'));
-
-    // TERMS / PRIVACY
-    termsLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('termsModal'); });
-    privacyLink.addEventListener('click', (e)=>{ e.preventDefault(); openModal('privacyModal'); });
-
-    // Attach buttons -> show coming soon modal
-    function showComing(){ openModal('comingModal'); }
-    attachBtn && attachBtn.addEventListener('click', showComing);
-    attachBtnTop && attachBtnTop.addEventListener('click', showComing);
-
-    // Quick previews
-    showCodeBtn && showCodeBtn.addEventListener('click', ()=>{
-      previewInner.innerHTML = `<div class="text-sm text-[var(--muted)]">Code playground — paste code in chat with triple backticks.</div>
-                                <pre><code class="language-javascript">console.log('Hello AiVA');</code></pre>`;
-      Prism.highlightAll();
-    });
-
-    // SIMPLE AUTH (Firebase) behaviors with email verify / forgot / change pass
-    const signinEmail = document.getElementById('signinEmail');
-    const signinPassword = document.getElementById('signinPassword');
-    const signupEmail = document.getElementById('signupEmail');
-    const signupPassword = document.getElementById('signupPassword');
-    const acceptTerms = document.getElementById('acceptTerms');
-    const authError = document.getElementById('authError');
-    const authErrorSign = document.getElementById('authErrorSign');
-
-    signinBtn && signinBtn.addEventListener('click', async ()=>{
-      authError.textContent = '';
-      if (!signinEmail.value || !signinPassword.value){ authError.textContent = 'Enter email & password'; return; }
-      try {
-        await auth.signInWithEmailAndPassword(signinEmail.value.trim(), signinPassword.value);
-        authOverlay.classList.add('hidden');
-      } catch(e){
-        authError.textContent = e.message;
-      }
-    });
-
-    signupBtn && signupBtn.addEventListener('click', async ()=>{
-      authErrorSign.textContent = '';
-      if (!signupEmail.value || !signupPassword.value){ authErrorSign.textContent = 'Enter email & password'; return; }
-      if (!acceptTerms.checked){ authErrorSign.textContent = 'Please accept Terms & Privacy'; return; }
-      try {
-        const res = await auth.createUserWithEmailAndPassword(signupEmail.value.trim(), signupPassword.value);
-        if (res.user) {
-          try { await res.user.sendEmailVerification(); } catch(e){ console.debug('verify send failed', e); }
-        }
-        authOverlay.classList.add('hidden');
-      } catch(e){
-        authErrorSign.textContent = e.message;
-      }
-    });
-
-    // forgot password
-    forgotPassBtn && forgotPassBtn.addEventListener('click', async ()=>{
-      const email = signinEmail.value.trim();
-      if (!email) { authError.textContent = 'Enter your email above then click Forgot password'; return; }
-      try {
-        await auth.sendPasswordResetEmail(email);
-        openModal('forgotNotice');
-      } catch(e){
-        authError.textContent = e.message;
-      }
-    });
-
-    googleBtn && googleBtn.addEventListener('click', async ()=>{
-      const provider = new firebase.auth.GoogleAuthProvider();
-      try { await auth.signInWithPopup(provider); authOverlay.classList.add('hidden'); }
-      catch(e){ alert(e.message); }
-    });
-
-    logoutBtn && logoutBtn.addEventListener('click', ()=> auth.signOut());
-    logoutSettings && logoutSettings.addEventListener('click', ()=> auth.signOut());
-
-    // settings modal
-    settingsBtn && settingsBtn.addEventListener('click', ()=> openModal('settingsModal'));
-    closeSettings && closeSettings.addEventListener('click', ()=> closeModal('settingsModal'));
-    saveSettings && saveSettings.addEventListener('click', ()=>{
-      settings.model = modelSelect.value;
-      settings.maxMessages = Number(maxMessagesInput.value);
-      settings.autoSave = autoSave.checked;
-      closeModal('settingsModal');
-    });
-
-    // send verification from settings
-    sendVerifyBtn && sendVerifyBtn.addEventListener('click', async ()=>{
-      if (!currentUser) return alert('Not signed in');
-      try { await currentUser.sendEmailVerification(); alert('Verification email sent'); }
-      catch(e){ alert('Send failed: ' + e.message); }
-    });
-
-    // change password flow
-    changePassBtn && changePassBtn.addEventListener('click', ()=> openModal('changePassModal'));
-    doChangePass && doChangePass.addEventListener('click', async ()=>{
-      changePassError.textContent = '';
-      if (!currentUser) { changePassError.textContent = 'Not signed in'; return; }
-      const oldP = currentPass.value; const newP = newPass.value;
-      if (!oldP || !newP) { changePassError.textContent = 'Enter current and new password'; return; }
-      try {
-        // reauthenticate
-        const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, oldP);
-        await currentUser.reauthenticateWithCredential(cred);
-        await currentUser.updatePassword(newP);
-        closeModal('changePassModal');
-        alert('Password changed');
-      } catch(e){
-        // common error: require-recent-login
-        changePassError.textContent = e.message;
-      }
-    });
-
-    // profile open
-    document.getElementById('openProfileBtn') && document.getElementById('openProfileBtn').addEventListener('click', ()=> openModal('settingsModal'));
-
-    // auth state changes
-    auth.onAuthStateChanged(async user => {
-      currentUser = user;
-      if (user){
-        signedOutSidebar.classList.add('hidden');
-        signedInSidebar.classList.remove('hidden');
-        userNameEl.textContent = user.displayName || (user.email || 'You');
-        userEmailEl.textContent = user.email || '';
-        settingsUserEmail.textContent = user.email || '';
-        if (user.photoURL){ userPicEl.src = user.photoURL; userPicEl.classList.remove('hidden'); }
-        // hide auth overlay if open
-        authOverlay.classList.add('hidden');
-        // load conversations
-        await loadConversations();
-      } else {
-        signedOutSidebar.classList.remove('hidden');
-        signedInSidebar.classList.add('hidden');
-        conversationsEl.innerHTML = '';
-        messagesEl.innerHTML = '';
-        activeConversationId = null;
-        currentMessages = [];
-        if (pollHandle) clearInterval(pollHandle);
-        // show sign in overlay on site load when not logged in
-        openModal('authOverlay');
-      }
-    });
-
-    // Conversations + messages (server required)
-    async function loadConversations(){
-      if (!currentUser) return;
-      try {
-        const token = await currentUser.getIdToken();
-        const res = await fetch(`${SERVER_BASE}/api/conversations`, { headers: { Authorization: 'Bearer ' + token } });
-        if (!res.ok) throw new Error('Failed to load conversations');
-        conversations = await res.json();
-        renderConversationList();
-      } catch (e){ console.debug(e); }
+  // handle code blocks
+  if(typeof m.text === 'string' && m.text.includes('```')){
+    const parts = m.text.split(/```/);
+    let html = '';
+    for(let i=0;i<parts.length;i++){
+      if(i%2===0) html += `<div>${esc(parts[i])}</div>`;
+      else html += `<pre class="code"><code>${esc(parts[i])}</code></pre>`;
     }
+    box.innerHTML = html;
+    box.querySelectorAll('pre code').forEach(b=> hljs.highlightBlock(b));
+  } else if(typeof m.text === 'string' && m.text.startsWith('[chart]')){
+    try{
+      const cfg = JSON.parse(m.text.replace(/^chart\s*/,''));
+      const cid = 'c_'+Math.random().toString(36).slice(2,9);
+      box.innerHTML = `<canvas id="${cid}" height="150"></canvas>`;
+      setTimeout(()=>{ const ctx = document.getElementById(cid).getContext('2d'); new Chart(ctx, cfg); }, 50);
+    } catch(e){ box.textContent = m.text; }
+  } else {
+    box.textContent = m.text;
+  }
 
-    function renderConversationList(){
-      conversationsEl.innerHTML = '';
-      const q = (searchInput.value || '').trim().toLowerCase();
-      (conversations || []).filter(c => !q || (c.title||'').toLowerCase().includes(q) || (c.lastMessage||'').toLowerCase().includes(q))
-        .forEach(c=>{
-          const row = el('div','p-3 rounded hover:bg-[#08171b] cursor-pointer');
-          if (c.id === activeConversationId) row.classList.add('bg-[#071f23]');
-          row.innerHTML = `<div class="flex justify-between"><div class="font-medium">${escapeHtml(c.title||'Untitled')}</div><div class="text-xs text-[var(--muted)]">${new Date(c.updatedAt||c.createdAt||Date.now()).toLocaleString()}</div></div>
-                           <div class="text-sm text-[var(--muted)] mt-1">${escapeHtml(truncate(c.lastMessage||'No messages yet', 60))}</div>`;
-          row.addEventListener('click', ()=> openConversation(c.id));
-          conversationsEl.appendChild(row);
-        });
-    }
+  meta.textContent = `${m.senderName || (isUser ? 'You' : 'AiVA')} • ${fmtTime(m.timestamp)}`;
+  node.dataset.msg = m.key;
+  $messages.append(node);
+  $messages.scrollTop($messages[0].scrollHeight);
 
-    newConvBtn && newConvBtn.addEventListener('click', createConversation);
-    newConvBtnTop && newConvBtnTop.addEventListener('click', createConversation);
+  // quick actions for AI messages
+  if(!isUser){
+    const actions = $('<div class="flex gap-2 mt-2"></div>');
+    const copyBtn = $('<button class="text-xs px-2 py-1 rounded-md border border-white/5">Copy</button>').on('click', ()=> navigator.clipboard.writeText(m.text||''));
+    const replyBtn = $('<button class="text-xs px-2 py-1 rounded-md border border-white/5">Reply</button>').on('click', ()=>{
+      replyTo = { key: m.key, text: m.text, senderName: m.senderName };
+      $replyPreview.removeClass('hidden'); $replySummary.text((m.text||'').slice(0,200));
+    });
+    const saveBtn = $('<button class="text-xs px-2 py-1 rounded-md border border-white/5">Save</button>').on('click', async ()=>{
+      await db.ref(`notes/${currentUser.uid}`).push({ text:m.text, chatId: currentChatId, at: Date.now() });
+      alert('Saved to notes');
+    });
+    actions.append(copyBtn, replyBtn, saveBtn);
+    $messages.children().last().append(actions);
+  }
+}
 
-    async function createConversation(){
-      if (!currentUser) return alert('Sign in first');
-      try{
-        const token = await currentUser.getIdToken();
-        const res = await fetch(`${SERVER_BASE}/api/conversations`, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type':'application/json' }, body: JSON.stringify({ title: 'New Conversation' }) });
-        if (!res.ok){ const txt = await res.text(); throw new Error(txt || 'Create conversation failed'); }
-        const conv = await res.json();
-        await loadConversations();
-        openConversation(conv.id);
-      } catch(e){ alert('Create conversation failed: ' + (e.message || 'server error')); }
-    }
+/* Update message DOM */
+function updateMessageDOM(key, data){
+  const node = $(`[data-msg="${key}"]`)[0];
+  if(!node) return;
+  $(node).find('.msg-content').text(data.text || '');
+  $(node).find('.msg-meta').text(`${data.senderName||''} • ${fmtTime(data.timestamp)}`);
+}
 
-    async function openConversation(convId){
-      activeConversationId = convId;
-      renderConversationList();
-      await loadMessages(convId);
-      document.getElementById('activeConvTitle').textContent = (conversations.find(c=>c.id===convId)||{}).title || 'Conversation';
-      if (pollHandle) clearInterval(pollHandle);
-      pollHandle = setInterval(()=> pollUpdates(convId), 4000);
-    }
+/* Send message: push, pending job, immediate proxy attempt */
+$sendBtn.on('click', sendMessage);
+$messageInput.on('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
+$cancelReply.on('click', ()=> { replyTo = null; $replyPreview.addClass('hidden'); });
 
-    async function loadMessages(convId){
-      if (!currentUser || !convId) return;
-      try {
-        const token = await currentUser.getIdToken();
-        const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages`, { headers: { Authorization: 'Bearer ' + token } });
-        if (!res.ok){ const txt = await res.text(); throw new Error(txt || 'Failed to load messages'); }
-        const msgs = await res.json();
-        currentMessages = msgs || [];
-        renderMessages(msgs);
-      } catch (e){
-        console.debug(e);
-        // if server not configured, inform user
-        if (SERVER_BASE.includes('YOUR_RENDER_BACKEND_URL')) {
-          appendLocalAssistantMessage('Backend not configured. Set SERVER_BASE in the code to your backend URL.');
-        }
-      }
-    }
+async function sendMessage(){
+  const txt = $messageInput.val().trim();
+  if(!txt || !currentUser || !currentChatId) return;
+  const msgObj = {
+    senderId: currentUser.uid,
+    senderName: currentUser.displayName || currentUser.email,
+    text: txt,
+    timestamp: Date.now(),
+    status: 'Sent'
+  };
+  if(replyTo){ msgObj.replyTo = replyTo; replyTo = null; $replyPreview.addClass('hidden'); }
+  const msgRef = await db.ref(`chats/${currentUser.uid}/${currentChatId}`).push(msgObj);
+  await db.ref(`userChats/${currentUser.uid}/${currentChatId}`).update({ lastText: txt, lastAt: Date.now() });
 
-    function renderMessages(messages){
-      messagesEl.innerHTML = '';
-      currentMessages = messages || [];
-      for (const m of currentMessages){
-        const wrapper = el('div','flex');
-        wrapper.style.flexDirection = (m.role === 'user') ? 'row-reverse' : 'row';
-        const bubble = el('div','p-3 rounded-lg max-w-[80%] break-words');
-        bubble.classList.add(m.role === 'user' ? 'bg-[var(--accent)] text-black' : 'bg-[#07181c] text-[var(--muted)]');
+  $messageInput.val(''); autosize.update($('#messageInput'));
+  // create pending job for worker (if proxy fails)
+  const pendingRef = await db.ref(`pending/${currentUser.uid}`).push({
+    chatId: currentChatId,
+    messageId: msgRef.key,
+    text: txt,
+    createdAt: Date.now(),
+    attempts: 0
+  });
 
-        if (m.replyTo) {
-          const rp = el('div','text-xs mb-2 rounded px-2 py-1 bg-[#041016]');
-          rp.innerHTML = `<strong class="text-[var(--accent)]">${escapeHtml(m.replyTo.author)}</strong>: ${escapeHtml(truncate(m.replyTo.text,80))}`;
-          bubble.appendChild(rp);
-        }
+  // Build context (last N messages)
+  const ctxN = parseInt($contextLen.val() || $settingsContext.val() || 20, 10);
+  const snap = await db.ref(`chats/${currentUser.uid}/${currentChatId}`).orderByChild('timestamp').limitToLast(ctxN).once('value');
+  const messages = [];
+  snap.forEach(s=>{
+    const mm = s.val();
+    const role = mm.senderId === currentUser.uid ? 'user' : 'assistant';
+    messages.push({ role, content: mm.text || '' });
+  });
+  const payload = { messages: [{ role:'system', content: 'You are AiVA, a concise helpful assistant.' }, ...messages], model: $modelSelect.val() || $settingsModel.val() };
 
-        if (m.text && m.text.trim().startsWith('```')) {
-          const code = m.text.replace(/^\s*```[a-z]*\n?/, '').replace(/\n?```$/, '');
-          const pre = el('pre'); const codeEl = el('code','language-javascript');
-          codeEl.textContent = code;
-          pre.appendChild(codeEl); bubble.appendChild(pre);
-          setTimeout(()=> Prism.highlightElement(codeEl), 30);
-        } else {
-          bubble.innerHTML += `<div>${escapeHtml(m.text || '')}</div>`;
-        }
-
-        const footer = el('div','text-[var(--muted)] text-xs mt-2 flex gap-2 items-center');
-        footer.innerHTML = `<span>${new Date(m.createdAt||Date.now()).toLocaleTimeString()}</span>
-                            <button data-id="${m.id}" class="replyBtn text-[var(--muted)] text-xs">Reply</button>
-                            <button data-id="${m.id}" class="menuBtn text-[var(--muted)] text-xs">⋯</button>`;
-        bubble.appendChild(footer);
-
-        wrapper.appendChild(bubble);
-        messagesEl.appendChild(wrapper);
-      }
-
-      // attach delegate events
-      messagesEl.querySelectorAll('.replyBtn').forEach(btn=>{
-        btn.onclick = (e)=> {
-          const id = btn.dataset.id;
-          const msg = currentMessages.find(x=>String(x.id)===String(id));
-          if (msg){ setReply(msg); }
-        };
+  // Immediate proxy attempt
+  try{
+    const resp = await fetch(SERVER_BASE + '/api/query', { method:'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if(resp.ok){
+      const json = await resp.json();
+      const replyText = json.replyText || (json.result && (json.result.choices?.[0]?.message?.content || json.result.output?.[0]?.content)) || 'No reply';
+      await db.ref(`chats/${currentUser.uid}/${currentChatId}`).push({
+        senderId: 'aiva_bot',
+        senderName: 'AiVA',
+        text: replyText,
+        timestamp: Date.now(),
+        status: 'Sent',
+        source: 'proxy'
       });
-      messagesEl.querySelectorAll('.menuBtn').forEach(btn=>{
-        btn.onclick = (e)=> {
-          const id = btn.dataset.id;
-          showContextMenu(e.pageX, e.pageY, id);
-        };
-      });
-
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+      await pendingRef.remove();
+    } else {
+      console.warn('Proxy returned non-ok', resp.status);
     }
+  } catch(err){
+    console.warn('Proxy failed, leaving pending for worker', err);
+  }
+}
 
-    // Reply
-    function setReply(msg){
-      replyTo = { id: msg.id, text: msg.text, author: msg.role === 'user' ? 'You' : 'AiVA' };
-      document.getElementById('replyAuthor').textContent = replyTo.author;
-      document.getElementById('replyText').textContent = truncate(replyTo.text, 200);
-      document.getElementById('replyPreview').classList.remove('hidden');
-    }
-    document.getElementById('cancelReply') && document.getElementById('cancelReply').addEventListener('click', ()=> { replyTo = null; document.getElementById('replyPreview').classList.add('hidden'); });
+/* Settings modal */
+$settingsBtn.on('click', ()=> $settingsModal.removeClass('hidden'));
+$closeSettings.on('click', ()=> $settingsModal.addClass('hidden'));
+$settingsModel.val($modelSelect.val());
+$settingsContext.val($contextLen.val());
+$('#closeSettings').on('click', ()=> {
+  $settingsModal.addClass('hidden');
+  $modelSelect.val($settingsModel.val());
+  $contextLen.val($settingsContext.val());
+});
 
-    // Send message (optimistic) with maxMessages check, and backend error info
-    sendBtn && sendBtn.addEventListener('click', async ()=>{
-      const text = (messageInput.value || '').trim();
-      if (!text) return;
-      if (!currentUser) { alert('Sign in required'); openModal('authOverlay'); return; }
-      if (!activeConversationId) { alert('Open or create a conversation first'); return; }
+/* Regenerate (puts last user's message into input) */
+$('#btnRegenerate').on('click', async ()=>{
+  if(!currentUser || !currentChatId) return;
+  const snap = await db.ref(`chats/${currentUser.uid}/${currentChatId}`).orderByChild('timestamp').limitToLast(200).once('value');
+  let lastUser = null;
+  snap.forEach(s=>{ const v=s.val(); if(v.senderId === currentUser.uid) lastUser = { key:s.key, ...v }; });
+  if(lastUser){ $messageInput.val(lastUser.text); autosize.update($('#messageInput')); $messageInput.focus(); }
+});
 
-      // enforce message limit
-      const maxAllowed = Number(maxMessagesInput.value) || 20;
-      if ((currentMessages || []).length >= maxAllowed) {
-        alert(`This conversation has reached the maximum of ${maxAllowed} messages. Start a new conversation.`);
-        return;
-      }
+/* Clear chat */
+$('#btnClear').on('click', async ()=>{
+  if(!confirm('Clear this chat? This will delete messages and chat entry.')) return;
+  if(!currentUser || !currentChatId) return;
+  await db.ref(`chats/${currentUser.uid}/${currentChatId}`).remove();
+  await db.ref(`userChats/${currentUser.uid}/${currentChatId}`).remove();
+  $messages.empty(); renderChatList();
+});
 
-      // optimistic UI
-      appendLocalMessage(text);
-      messageInput.value = '';
-      document.getElementById('replyPreview').classList.add('hidden');
+/* Search chats */
+$searchInput.on('input', function(){ const q = $(this).val().toLowerCase(); $chatList.children().each(function(){ const t = $(this).find('.text-sm').text().toLowerCase(); $(this).toggle(t.includes(q)); }); });
 
-      try {
-        const token = await currentUser.getIdToken();
-        document.getElementById('typingIndicator').classList.remove('hidden');
-        const payload = { conversationId: activeConversationId, text, replyTo: replyTo ? replyTo.id : null, settings };
-        // basic sanity check for backend placeholder
-        if (SERVER_BASE.includes('YOUR_RENDER_BACKEND_URL')) {
-          throw new Error('Backend not configured (SERVER_BASE placeholder). Update SERVER_BASE in code.');
-        }
-        const res = await fetch(`${SERVER_BASE}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
-          body: JSON.stringify(payload)
-        });
-        document.getElementById('typingIndicator').classList.add('hidden');
-        if (!res.ok) {
-          const txt = await res.text().catch(()=>null);
-          // detect likely missing API key or backend auth issue
-          if (res.status === 401 || res.status === 403 || (txt && txt.toLowerCase().includes('api key'))) {
-            appendLocalAssistantMessage('Server rejected the request — likely the backend is missing an API key or credentials. Check your server configuration.');
-          } else {
-            appendLocalAssistantMessage('Server error: ' + (txt || res.statusText || 'unknown'));
-          }
-          throw new Error(txt || 'server error');
-        }
-        const json = await res.json();
-        // after successful send, reload messages
-        await loadMessages(activeConversationId);
-        await loadConversations();
-      } catch (e) {
-        document.getElementById('typingIndicator').classList.add('hidden');
-        // if earlier optimistic append exists, keep it; show assistant error bubble
-        appendLocalAssistantMessage('Error: ' + (e.message || 'Failed to send'));
-        console.debug(e);
-      } finally {
-        replyTo = null;
-      }
-    });
+/* Utility: mark seen (simple) */
+async function markSeen(){ if(!currentUser || !currentChatId) return; const ref = db.ref(`chats/${currentUser.uid}/${currentChatId}`); const snap = await ref.orderByChild('status').equalTo('Delivered').once('value'); snap.forEach(s=> { const m = s.val(); if(m.senderId && m.senderId !== currentUser.uid) s.ref.update({ status:'Seen' }); }); }
 
-    function appendLocalMessage(text){
-      const wrapper = el('div','flex'); wrapper.style.flexDirection = 'row-reverse';
-      const bubble = el('div','p-3 rounded-lg max-w-[80%] bg-[var(--accent)] text-black');
-      bubble.textContent = text;
-      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-    function appendLocalAssistantMessage(text){
-      const wrapper = el('div','flex'); wrapper.style.flexDirection = 'row';
-      const bubble = el('div','p-3 rounded-lg max-w-[80%] bg-[#07181c] text-[var(--muted)]');
-      bubble.textContent = text;
-      wrapper.appendChild(bubble); messagesEl.appendChild(wrapper);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+/* Startup: init highlight */
+$(function(){ if(window.hljs) hljs.configure({}); });
 
-    // Poll updates
-    async function pollUpdates(convId){
-      if (!currentUser || !convId) return;
-      try {
-        const token = await currentUser.getIdToken();
-        const res = await fetch(`${SERVER_BASE}/api/conversations/${convId}/messages?since=${Date.now()-5000}`, {
-          headers: { Authorization: 'Bearer ' + token }
-        });
-        if (!res.ok) return;
-        const updates = await res.json();
-        if (updates && updates.length) {
-          await loadMessages(convId);
-          await loadConversations();
-        }
-      } catch(e){ console.debug('poll error', e); }
-    }
+/* Prevent overflow: keep everything inside containers (CSS handles) */
 
-    // Context menu
-    const contextMenu = document.getElementById('contextMenu');
-    function showContextMenu(x,y,msgId){
-      contextTargetMsgId = msgId;
-      contextMenu.style.left = x + 'px';
-      contextMenu.style.top = y + 'px';
-      contextMenu.classList.remove('hidden');
-    }
-    document.addEventListener('click', ()=> contextMenu.classList.add('hidden'));
+/* EOF */
+</script>
 
-    document.getElementById('ctxReply') && document.getElementById('ctxReply').addEventListener('click', async ()=>{
-      if (!contextTargetMsgId) return;
-      const token = await currentUser.getIdToken();
-      const res = await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, { headers: { Authorization: 'Bearer ' + token } }).catch(()=>null);
-      if (res && res.ok){
-        const msg = await res.json();
-        setReply(msg);
-      }
-    });
-
-    document.getElementById('ctxDelete') && document.getElementById('ctxDelete').addEventListener('click', async ()=>{
-      if (!contextTargetMsgId) return;
-      try {
-        const token = await currentUser.getIdToken();
-        await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
-        await loadMessages(activeConversationId);
-      } catch(e){ console.debug(e); }
-    });
-
-    document.getElementById('ctxDeleteAll') && document.getElementById('ctxDeleteAll').addEventListener('click', async ()=>{
-      if (!contextTargetMsgId) return;
-      try {
-        const token = await currentUser.getIdToken();
-        await fetch(`${SERVER_BASE}/api/conversations/${activeConversationId}/messages/${contextTargetMsgId}?forEveryone=1`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
-        await loadMessages(activeConversationId);
-      } catch(e){ console.debug(e); }
-    });
-
-    // utilities
-    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function truncate(s,n=120){ if(!s) return ''; return s.length>n ? s.slice(0,n)+'...' : s; }
-
-    // keyboard send
-    messageInput && messageInput.addEventListener('keydown', (e)=> { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
-
-    // search
-    searchInput && searchInput.addEventListener('input', ()=> renderConversationList());
-
-    // page visibility
-    document.addEventListener('visibilitychange', ()=> {
-      if (document.hidden) { if (pollHandle) clearInterval(pollHandle); }
-      else if (activeConversationId) pollHandle = setInterval(()=> pollUpdates(activeConversationId), 4000);
-    });
-
-    // initial behaviour: show auth overlay if not logged in
-    window.addEventListener('load', async ()=> {
-      if (!auth.currentUser) {
-        openModal('authOverlay');
-      } else {
-        // if already signed in, hide overlay
-        authOverlay.classList.add('hidden');
-      }
-    });
-  </script>
 </body>
-</html>
+  </html>
