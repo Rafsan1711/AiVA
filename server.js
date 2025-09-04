@@ -1,109 +1,117 @@
-// server.js
-require('dotenv').config();
+// server.js - Express proxy for AI queries (HuggingFace router)
+// Usage: set HF_TOKEN and optionally HF_MODEL, FRONTEND_ORIGIN, PORT in .env
 const express = require('express');
-const fetch = require('node-fetch'); // v2 compatible
-const path = require('path');
 const cors = require('cors');
+const bodyParser = require('body-parser');
+const fetch = require('node-fetch'); // node-fetch v2
+require('dotenv').config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
-const HF_TOKEN = process.env.HF_TOKEN;
-const HF_MODEL = process.env.HF_MODEL || 'openai/gpt-oss-120b:together';
-const HF_URL = 'https://router.huggingface.co/v1/chat/completions';
+// CORS - restrict in production by setting FRONTEND_ORIGIN env
+app.use(cors({
+  origin: process.env.FRONTEND_ORIGIN || '*'
+}));
+app.use(bodyParser.json({ limit: '1mb' }));
 
-if (!HF_TOKEN) console.warn('HF_TOKEN not set. /ai-move will fail without it.');
+// Simple health endpoint
+app.get('/', (req, res) => {
+  res.json({ ok: true, service: 'aiva-proxy', env: process.env.NODE_ENV || 'development' });
+});
 
-function buildMessages(state) {
-  const system = {
-    role: "system",
-    content:
-`You are a Dot & Box move selector. You will be given the current board state as a JSON string by the user.
-Your ONLY job: output EXACTLY one JSON object and nothing else (no commentary, no markdown).
-The JSON must be parseable and exactly match this schema:
-{ "row": <integer>, "col": <integer>, "explanation": "<short reason, max 80 chars>" }
-Rows and cols use the same grid indexing as the client (size = boardSize*2-1). Valid moves are cells where (row%2==0 xor col%2==0) and not both even.
-Prefer moves that complete a box immediately. Otherwise prefer safe moves that do NOT create a 3-sided box for the opponent.
-If no valid moves exist, output { "row": -1, "col": -1, "explanation": "no moves" }`
-  };
+// Low-level HF query helper
+async function queryHF(payload) {
+  const HF_TOKEN = process.env.HF_TOKEN;
+  if (!HF_TOKEN) throw new Error('HF_TOKEN not set');
 
-  const user = {
-    role: "user",
-    content: JSON.stringify(state)
-  };
+  const url = process.env.HF_BASE_URL || 'https://router.huggingface.co/v1/chat/completions';
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${HF_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload),
+    // optionally add a timeout wrapper in production
+  });
 
-  return [system, user];
+  // try to parse JSON; if non-JSON returned, throw
+  const text = await resp.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    // include response text for debugging
+    throw new Error(`Non-JSON response from HF: ${text}`);
+  }
 }
 
-app.post('/ai-move', async (req, res) => {
+// POST /api/query
+// Accepts body.messages (array of {role, content}) or body.message (string)
+// Optional: body.model (overrides env HF_MODEL)
+app.post('/api/query', async (req, res) => {
   try {
-    const state = req.body;
-    if (!state || typeof state.boardSize !== 'number' || !Array.isArray(state.lines)) {
-      return res.status(400).json({ error: 'invalid state payload' });
+    if (!process.env.HF_TOKEN) {
+      return res.status(500).json({ error: 'HF_TOKEN not set on server' });
     }
 
-    const messages = buildMessages(state);
-    const payload = { model: HF_MODEL, messages, max_tokens: 128, temperature: 0.0 };
+    const body = req.body || {};
+    let messages = [];
 
-    const hfResp = await fetch(HF_URL, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${HF_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (!hfResp.ok) {
-      const txt = await hfResp.text();
-      console.error('HF error', hfResp.status, txt);
-      return res.status(502).json({ error: 'HuggingFace API error', details: txt });
-    }
-
-    const result = await hfResp.json();
-    let assistantContent = null;
-    if (result?.choices?.length) {
-      assistantContent = result.choices[0]?.message?.content ?? result.choices[0]?.text ?? null;
+    if (Array.isArray(body.messages) && body.messages.length) {
+      messages = body.messages;
+    } else if (body.message && typeof body.message === 'string') {
+      messages = [{ role: 'user', content: body.message }];
     } else {
-      assistantContent = JSON.stringify(result);
+      return res.status(400).json({ error: 'Provide messages array or message string' });
     }
 
-    // extract first JSON object from assistantContent
-    let parsed = null;
+    // Build payload for HF / router
+    const payload = Object.assign({}, body);
+    payload.messages = messages;
+    payload.model = payload.model || process.env.HF_MODEL || 'openai/gpt-oss-120b:together';
+
+    // Forward to HF
+    const hfResp = await queryHF(payload);
+
+    // Robustly extract reply text from HF response shapes
+    let replyText = '';
     try {
-      const match = assistantContent.match(/{[\s\S]*}/);
-      if (match) parsed = JSON.parse(match[0]);
-      else parsed = JSON.parse(assistantContent);
-    } catch (e) {
-      console.warn('parse failed, assistantContent=', assistantContent);
-      // fallback: simple heuristic pick first available
-      const size = state.boardSize*2-1;
-      outer:
-      for (let r=0;r<size;r++){
-        for (let c=0;c<size;c++){
-          const key = `${r}-${c}`;
-          if ((r%2===0||c%2===0) && !(r%2===0 && c%2===0) && !state.lines.includes(key)) {
-            parsed = { row: r, col: c, explanation: 'fallback-first-available' };
-            break outer;
-          }
+      if (hfResp.choices && Array.isArray(hfResp.choices) && hfResp.choices.length) {
+        // new style: choices[0].message.content
+        const c0 = hfResp.choices[0];
+        if (c0.message && (c0.message.content || c0.message.content === '')) {
+          replyText = c0.message.content;
+        } else if (typeof c0.text === 'string' && c0.text.length) {
+          replyText = c0.text;
+        } else if (c0.delta && c0.delta.content) {
+          // streaming chunk fallback
+          replyText = c0.delta.content;
         }
       }
-      if (!parsed) parsed = { row: -1, col: -1, explanation: 'no moves' };
+      if (!replyText && hfResp.output && Array.isArray(hfResp.output) && hfResp.output[0] && hfResp.output[0].content) {
+        replyText = hfResp.output[0].content;
+      }
+      if (!replyText && typeof hfResp === 'string') {
+        replyText = hfResp;
+      }
+      if (!replyText && !replyText.length) {
+        // fallback: stringify limited portion
+        replyText = JSON.stringify(hfResp).slice(0, 2000);
+      }
+    } catch (err) {
+      replyText = 'Unable to parse HF response';
     }
 
-    // sanitize to ensure valid numbers
-    parsed.row = Number(parsed.row);
-    parsed.col = Number(parsed.col);
-    parsed.explanation = String(parsed.explanation || '');
-
-    return res.json({ row: parsed.row, col: parsed.col, explanation: parsed.explanation, raw: assistantContent });
+    return res.json({ ok: true, replyText, result: hfResp });
   } catch (err) {
-    console.error('server error /ai-move', err);
-    return res.status(500).json({ error: 'server error', details: String(err) });
+    console.error('Error /api/query:', err && err.stack ? err.stack : err);
+    // don't leak secrets in error responses
+    return res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Serve static (optional): put your public/ dir next to server.js
-const publicDir = path.join(__dirname, 'public');
-app.use(express.static(publicDir));
-
-app.listen(PORT, ()=> console.log(`AI server running on port ${PORT}`));
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`AiVA proxy listening on port ${PORT}`);
+});
