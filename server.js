@@ -9,7 +9,7 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://your-app-name.onrender.com'],
+  origin: process.env.FRONTEND_ORIGIN || ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://https://aiva-site.onrender.com/'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
