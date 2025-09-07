@@ -1,4 +1,4 @@
-    // Firebase Configuration
+  // Firebase Configuration
         const firebaseConfig = {
           apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
           authDomain: "aiva-9abbb.firebaseapp.com",
@@ -38,20 +38,13 @@
             messageInput: document.getElementById('messageInput'),
             sendBtn: document.getElementById('sendBtn'),
             chatHistory: document.getElementById('chatHistory'),
-            chatHistoryMobile: document.getElementById('chatHistoryMobile'),
             userInfo: document.getElementById('userInfo'),
             userName: document.getElementById('userName'),
             userAvatar: document.getElementById('userAvatar'),
-            userNameMobile: document.getElementById('userNameMobile'),
-            userAvatarMobile: document.getElementById('userAvatarMobile'),
             statusIndicator: document.getElementById('statusIndicator'),
             messageCount: document.getElementById('messageCount'),
-            messageCountMobile: document.getElementById('messageCountMobile'),
             chatDropdown: document.getElementById('chatDropdown'),
-            chatDropdownMobile: document.getElementById('chatDropdownMobile'),
-            archivedChats: document.getElementById('archivedChats'),
-            mobileSidebar: document.getElementById('mobileSidebar'),
-            mobileOverlay: document.getElementById('mobileOverlay')
+            archivedChats: document.getElementById('archivedChats')
         };
 
         // Initialize app
@@ -101,17 +94,6 @@
             alert('You must accept terms to use AiVA');
         });
 
-        // Mobile sidebar controls
-        function openMobileSidebar() {
-            elements.mobileSidebar.classList.add('active');
-            elements.mobileOverlay.classList.add('active');
-        }
-
-        function closeMobileSidebar() {
-            elements.mobileSidebar.classList.remove('active');
-            elements.mobileOverlay.classList.remove('active');
-        }
-
         // Auth state management
         function checkAuthState() {
             auth.onAuthStateChanged(user => {
@@ -119,7 +101,6 @@
                     currentUser = user;
                     showMainApp();
                     loadUserData();
-                    loadChatHistory();
                 } else {
                     showAuthModal();
                 }
@@ -134,16 +115,12 @@
         function showMainApp() {
             elements.authModal.classList.add('hidden');
             elements.mainApp.classList.remove('hidden');
+            loadChatHistory();
             startNewChat();
         }
 
         // Event Listeners
         function setupEventListeners() {
-            // Mobile sidebar events
-            document.getElementById('openMobileSidebar').addEventListener('click', openMobileSidebar);
-            document.getElementById('closeMobileSidebar').addEventListener('click', closeMobileSidebar);
-            elements.mobileOverlay.addEventListener('click', closeMobileSidebar);
-
             // Auth form toggles
             document.getElementById('showSignUp').addEventListener('click', () => {
                 elements.loginForm.classList.add('hidden');
@@ -162,31 +139,18 @@
             document.getElementById('googleSignUpBtn').addEventListener('click', handleGoogleSignIn);
             document.getElementById('signOutBtn').addEventListener('click', handleSignOut);
 
-            // Main app buttons (desktop)
+            // Main app buttons
             document.getElementById('newChatBtn').addEventListener('click', startNewChat);
             document.getElementById('settingsBtn').addEventListener('click', showSettings);
-            document.getElementById('archiveBtn').addEventListener('click', showArchive);
-
-            // Mobile app buttons
-            document.getElementById('newChatBtnMobile').addEventListener('click', () => {
-                startNewChat();
-                closeMobileSidebar();
-            });
-            document.getElementById('settingsBtnMobile').addEventListener('click', showSettings);
-            document.getElementById('archiveBtnMobile').addEventListener('click', showArchive);
-
-            // Modal close buttons
             document.getElementById('closeSettings').addEventListener('click', hideSettings);
+            document.getElementById('archiveBtn').addEventListener('click', showArchive);
             document.getElementById('closeArchive').addEventListener('click', hideArchive);
             document.getElementById('clearHistory').addEventListener('click', clearChatHistory);
             
-            // Chat menu (desktop and mobile)
-            document.getElementById('chatMenuBtn')?.addEventListener('click', toggleChatDropdown);
-            document.getElementById('chatMenuBtnMobile')?.addEventListener('click', toggleChatDropdownMobile);
+            // Chat menu
+            document.getElementById('chatMenuBtn').addEventListener('click', toggleChatDropdown);
             document.getElementById('archiveChat').addEventListener('click', archiveCurrentChat);
             document.getElementById('deleteChat').addEventListener('click', deleteCurrentChat);
-            document.getElementById('archiveChatMobile').addEventListener('click', archiveCurrentChat);
-            document.getElementById('deleteChatMobile').addEventListener('click', deleteCurrentChat);
             
             // Message input
             elements.messageInput.addEventListener('keypress', (e) => {
@@ -199,17 +163,13 @@
             elements.messageInput.addEventListener('input', autoResize);
             elements.sendBtn.addEventListener('click', sendMessage);
 
-            // Search chats (desktop and mobile)
-            document.getElementById('searchChats')?.addEventListener('input', filterChats);
-            document.getElementById('searchChatsMobile')?.addEventListener('input', filterChatsMobile);
+            // Search chats
+            document.getElementById('searchChats').addEventListener('input', filterChats);
 
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#chatMenuBtn') && !e.target.closest('#chatDropdown')) {
-                    elements.chatDropdown?.classList.remove('active');
-                }
-                if (!e.target.closest('#chatMenuBtnMobile') && !e.target.closest('#chatDropdownMobile')) {
-                    elements.chatDropdownMobile?.classList.remove('active');
+                    elements.chatDropdown.classList.remove('active');
                 }
             });
         }
@@ -268,16 +228,9 @@
         // User data management
         function loadUserData() {
             if (currentUser) {
-                const displayName = currentUser.displayName || currentUser.email;
-                const initial = displayName.charAt(0).toUpperCase();
-                
-                // Update desktop elements
-                if (elements.userName) elements.userName.textContent = displayName;
-                if (elements.userAvatar) elements.userAvatar.textContent = initial;
-                
-                // Update mobile elements
-                if (elements.userNameMobile) elements.userNameMobile.textContent = displayName;
-                if (elements.userAvatarMobile) elements.userAvatarMobile.textContent = initial;
+                elements.userName.textContent = currentUser.displayName || currentUser.email;
+                const initial = (currentUser.displayName || currentUser.email).charAt(0).toUpperCase();
+                elements.userAvatar.textContent = initial;
             }
         }
 
@@ -299,7 +252,6 @@
             elements.messageInput.focus();
             elements.sendBtn.disabled = false;
             elements.messageInput.disabled = false;
-            updateChatHistoryUI();
         }
 
         function generateChatId() {
@@ -307,10 +259,7 @@
         }
 
         function updateMessageCount() {
-            const countText = `${messageCount}/12`;
-            if (elements.messageCount) elements.messageCount.textContent = countText;
-            if (elements.messageCountMobile) elements.messageCountMobile.textContent = countText;
-            
+            elements.messageCount.textContent = `${messageCount}/12`;
             if (messageCount >= 12) {
                 showWarningBanner();
                 elements.sendBtn.disabled = true;
@@ -326,7 +275,7 @@
             elements.warningBanner.classList.add('hidden');
         }
 
-        // Message handling with conversational context and Firebase save
+        // Message handling with conversational context
         async function sendMessage() {
             const message = elements.messageInput.value.trim();
             if (!message || messageCount >= 12) return;
@@ -343,9 +292,6 @@
 
             // Add to conversation history with proper context
             conversationHistory.push({ role: 'user', content: message });
-
-            // Save to Firebase immediately after user message
-            await saveChatToHistory();
 
             // Show typing indicator
             showTypingIndicator();
@@ -383,8 +329,8 @@
                     // Add to conversation history to maintain context
                     conversationHistory.push({ role: 'assistant', content: data.replyText });
                     
-                    // Save conversation to Firebase after AI response
-                    await saveChatToHistory();
+                    // Save conversation to Firebase
+                    saveChatToHistory();
                 } else {
                     addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
                 }
@@ -478,8 +424,8 @@
             elements.messageInput.style.height = Math.min(elements.messageInput.scrollHeight, 128) + 'px';
         }
 
-        // Enhanced Chat history management with Firebase integration
-        async function saveChatToHistory() {
+        // Chat history management
+        function saveChatToHistory() {
             if (!currentUser || !currentChatId) return;
 
             const chatTitle = conversationHistory.find(msg => msg.role === 'user')?.content?.substring(0, 50) || 'New Chat';
@@ -489,20 +435,13 @@
                 messages: conversationHistory,
                 timestamp: Date.now(),
                 userId: currentUser.uid,
-                messageCount: messageCount,
-                lastUpdated: Date.now()
+                messageCount: messageCount
             };
 
             chatHistoryData[currentChatId] = chatData;
             
-            try {
-                // Save to Firebase with better error handling
-                await database.ref(`chats/${currentUser.uid}/${currentChatId}`).set(chatData);
-                console.log('Chat saved to Firebase successfully');
-            } catch (error) {
-                console.error('Error saving chat to Firebase:', error);
-                // Still update local UI even if Firebase save fails
-            }
+            // Save to Firebase
+            database.ref(`chats/${currentUser.uid}/${currentChatId}`).set(chatData);
             
             // Update UI
             updateChatHistoryUI();
@@ -512,26 +451,18 @@
             if (!currentUser) return;
 
             database.ref(`chats/${currentUser.uid}`).on('value', (snapshot) => {
-                const firebaseData = snapshot.val() || {};
-                chatHistoryData = firebaseData;
-                console.log('Loaded chat history from Firebase:', Object.keys(chatHistoryData).length, 'chats');
+                chatHistoryData = snapshot.val() || {};
                 updateChatHistoryUI();
             });
         }
 
         function updateChatHistoryUI() {
-            updateChatList(elements.chatHistory);
-            updateChatList(elements.chatHistoryMobile);
-        }
-
-        function updateChatList(container) {
-            if (!container) return;
-            
-            container.innerHTML = '';
+            const chatHistoryContainer = elements.chatHistory;
+            chatHistoryContainer.innerHTML = '';
 
             const chats = Object.values(chatHistoryData)
                 .filter(chat => !archivedChats[chat.id])
-                .sort((a, b) => (b.lastUpdated || b.timestamp) - (a.lastUpdated || a.timestamp));
+                .sort((a, b) => b.timestamp - a.timestamp);
 
             chats.forEach(chat => {
                 const chatItem = document.createElement('div');
@@ -547,44 +478,31 @@
                     </div>
                 `;
                 
-                chatItem.addEventListener('click', () => {
-                    loadChat(chat);
-                    closeMobileSidebar(); // Close mobile sidebar when chat is selected
-                });
-                container.appendChild(chatItem);
+                chatItem.addEventListener('click', () => loadChat(chat));
+                chatHistoryContainer.appendChild(chatItem);
             });
-
-            if (chats.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-center p-4">No chats yet</p>';
-            }
         }
 
         function loadChat(chat) {
             currentChatId = chat.id;
             conversationHistory = chat.messages || [];
-            messageCount = conversationHistory.filter(msg => msg.role === 'user').length;
+            messageCount = chat.messageCount || conversationHistory.filter(msg => msg.role === 'user').length;
             updateMessageCount();
-            hideWarningBanner();
             
             // Clear messages and rebuild
             elements.messagesContainer.innerHTML = '';
             
-            // Rebuild conversation display in chronological order
-            conversationHistory.forEach(msg => {
-                if (msg.role === 'user' || msg.role === 'assistant') {
-                    addMessage(msg.content, msg.role);
-                }
-            });
+            const userMessages = conversationHistory.filter(msg => msg.role === 'user');
+            const assistantMessages = conversationHistory.filter(msg => msg.role === 'assistant');
             
-            // Enable/disable input based on message count
-            if (messageCount >= 12) {
-                elements.sendBtn.disabled = true;
-                elements.messageInput.disabled = true;
-                showWarningBanner();
-            } else {
-                elements.sendBtn.disabled = false;
-                elements.messageInput.disabled = false;
-                elements.messageInput.focus();
+            // Rebuild conversation display
+            for (let i = 0; i < Math.max(userMessages.length, assistantMessages.length); i++) {
+                if (userMessages[i]) {
+                    addMessage(userMessages[i].content, 'user');
+                }
+                if (assistantMessages[i]) {
+                    addMessage(assistantMessages[i].content, 'assistant');
+                }
             }
             
             updateChatHistoryUI();
@@ -593,7 +511,7 @@
         function clearChatHistory() {
             if (!currentUser) return;
             
-            if (confirm('Are you sure you want to clear all chat history? This cannot be undone.')) {
+            if (confirm('Are you sure you want to clear all chat history?')) {
                 database.ref(`chats/${currentUser.uid}`).remove();
                 chatHistoryData = {};
                 archivedChats = {};
@@ -606,18 +524,8 @@
 
         function filterChats() {
             const searchTerm = document.getElementById('searchChats').value.toLowerCase();
-            filterChatList(elements.chatHistory, searchTerm);
-        }
-
-        function filterChatsMobile() {
-            const searchTerm = document.getElementById('searchChatsMobile').value.toLowerCase();
-            filterChatList(elements.chatHistoryMobile, searchTerm);
-        }
-
-        function filterChatList(container, searchTerm) {
-            if (!container) return;
+            const chatItems = elements.chatHistory.querySelectorAll('div');
             
-            const chatItems = container.querySelectorAll('div');
             chatItems.forEach(item => {
                 const title = item.querySelector('.font-medium')?.textContent?.toLowerCase() || '';
                 item.style.display = title.includes(searchTerm) ? 'block' : 'none';
@@ -626,11 +534,7 @@
 
         // Chat dropdown menu functions
         function toggleChatDropdown() {
-            elements.chatDropdown?.classList.toggle('active');
-        }
-
-        function toggleChatDropdownMobile() {
-            elements.chatDropdownMobile?.classList.toggle('active');
+            elements.chatDropdown.classList.toggle('active');
         }
 
         function archiveCurrentChat() {
@@ -638,24 +542,16 @@
             
             archivedChats[currentChatId] = chatHistoryData[currentChatId];
             saveUserPreferences();
-            
-            // Remove from Firebase active chats
-            if (currentUser) {
-                database.ref(`chats/${currentUser.uid}/${currentChatId}`).remove();
-            }
-            
-            delete chatHistoryData[currentChatId];
             updateChatHistoryUI();
             updateArchivedChatsUI();
-            elements.chatDropdown?.classList.remove('active');
-            elements.chatDropdownMobile?.classList.remove('active');
+            elements.chatDropdown.classList.remove('active');
             startNewChat();
         }
 
         function deleteCurrentChat() {
             if (!currentChatId) return;
             
-            if (confirm('Are you sure you want to delete this chat? This cannot be undone.')) {
+            if (confirm('Are you sure you want to delete this chat?')) {
                 if (currentUser && chatHistoryData[currentChatId]) {
                     database.ref(`chats/${currentUser.uid}/${currentChatId}`).remove();
                 }
@@ -664,8 +560,7 @@
                 saveUserPreferences();
                 updateChatHistoryUI();
                 updateArchivedChatsUI();
-                elements.chatDropdown?.classList.remove('active');
-                elements.chatDropdownMobile?.classList.remove('active');
+                elements.chatDropdown.classList.remove('active');
                 startNewChat();
             }
         }
@@ -682,12 +577,10 @@
 
         function updateArchivedChatsUI() {
             const archivedContainer = elements.archivedChats;
-            if (!archivedContainer) return;
-            
             archivedContainer.innerHTML = '';
 
             const archived = Object.values(archivedChats)
-                .sort((a, b) => (b.lastUpdated || b.timestamp) - (a.lastUpdated || a.timestamp));
+                .sort((a, b) => b.timestamp - a.timestamp);
 
             if (archived.length === 0) {
                 archivedContainer.innerHTML = '<p class="text-gray-400 text-center">No archived chats</p>';
