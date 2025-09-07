@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Balsamiq Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
         .fade-in {
             animation: fadeIn 0.3s ease-in;
@@ -54,34 +54,102 @@
             background: #475569;
             border-radius: 3px;
         }
+        .dropdown {
+            position: absolute;
+            right: 16px;
+            top: 50px;
+            background: #374151;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            min-width: 150px;
+            display: none;
+        }
+        .dropdown.active {
+            display: block;
+        }
+        .dropdown button {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            color: #e5e7eb;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .dropdown button:hover {
+            background: #4b5563;
+        }
+        .dropdown button:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+        .dropdown button:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+        .warning-banner {
+            background: #fbbf24;
+            color: #92400e;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .logo-placeholder {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen overflow-hidden">
     <!-- Terms Modal -->
     <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-gray-800 p-8 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto">
-            <h2 class="text-2xl font-bold mb-4">Terms of Service & Privacy Policy</h2>
-            <div class="space-y-4 text-sm">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-700">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="logo-placeholder">AI</div>
+                <h2 class="text-2xl font-bold">Terms of Service & Privacy Policy</h2>
+            </div>
+            <div class="space-y-4 text-sm text-gray-300">
                 <div>
-                    <h3 class="font-semibold text-lg mb-2">Terms of Service</h3>
-                    <p>By using AiVA, you agree to use this service responsibly. Do not share personal, sensitive, or illegal content. This service is provided as-is without warranties.</p>
+                    <h3 class="font-semibold text-lg mb-2 text-white">Terms of Service</h3>
+                    <p>By using AiVA, you agree to use this service responsibly. Do not share personal, sensitive, or illegal content. This service is provided as-is without warranties. You may send up to 12 messages per chat session.</p>
                 </div>
                 <div>
-                    <h3 class="font-semibold text-lg mb-2">Privacy Policy</h3>
+                    <h3 class="font-semibold text-lg mb-2 text-white">Privacy Policy</h3>
                     <p>We collect minimal data necessary for service functionality. Conversations may be processed by AI services. We don't sell your data to third parties. Your data is handled according to industry standards.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg mb-2 text-white">Usage Limits</h3>
+                    <p>Each chat session is limited to 12 messages to ensure fair usage and optimal performance. Progress is saved automatically.</p>
                 </div>
             </div>
             <div class="flex gap-4 mt-6">
-                <button id="acceptTerms" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded">Accept</button>
-                <button id="declineTerms" class="bg-gray-600 hover:bg-gray-700 px-6 py-2 rounded">Decline</button>
+                <button id="acceptTerms" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded transition-colors">Accept</button>
+                <button id="declineTerms" class="bg-gray-600 hover:bg-gray-700 px-6 py-2 rounded transition-colors">Decline</button>
             </div>
         </div>
     </div>
 
     <!-- Auth Modal -->
     <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full mx-4">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full mx-4 border border-gray-700">
             <div class="text-center mb-6">
+                <div class="logo-placeholder mx-auto mb-3">AI</div>
                 <h1 class="text-4xl font-bold mb-2">AiVA</h1>
                 <p class="text-gray-400">AI Virtual Assistant</p>
             </div>
@@ -115,10 +183,10 @@
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold">Settings</h2>
-                <button id="closeSettings" class="text-gray-400 hover:text-white">&times;</button>
+                <button id="closeSettings" class="text-gray-400 hover:text-white text-2xl">&times;</button>
             </div>
             <div class="space-y-4">
                 <div class="flex justify-between items-center">
@@ -130,9 +198,9 @@
                 <div class="flex justify-between items-center">
                     <span>Model</span>
                     <select id="modelSelect" class="bg-gray-700 p-2 rounded">
-                        <option value="openai/gpt-oss-120b:together">GPT OSS</option>
-                        <option value="meta-llama/Llama-2-70b-chat-hf">Llama 2</option>
-                        <option value="mistralai/Mistral-7B-Instruct-v0.1">Mistral</option>
+                        <option value="openai/gpt-oss-120b:together">GPT OSS 120B</option>
+                        <option value="openai/gpt-4o-mini">GPT-4O Mini</option>
+                        <option value="mistralai/Mistral-7B-Instruct-v0.1">Mistral 7B</option>
                     </select>
                 </div>
                 <button id="clearHistory" class="w-full bg-red-600 hover:bg-red-700 p-2 rounded">Clear Chat History</button>
@@ -141,19 +209,41 @@
         </div>
     </div>
 
+    <!-- Archive Modal -->
+    <div id="archiveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Archived Chats</h2>
+                <button id="closeArchive" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="archivedChats" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- Archived chats will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Banner (hidden by default) -->
+    <div id="warningBanner" class="warning-banner hidden">
+        ⚠️ You have reached the message limit for this chat (12/12). Please start a new chat to continue.
+    </div>
+
     <!-- Main App -->
     <div id="mainApp" class="flex h-screen hidden">
         <!-- Sidebar -->
         <div class="w-80 bg-gray-800 flex flex-col">
             <!-- Header -->
             <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold">AiVA</h1>
-                    <p class="text-xs text-gray-400">AI Virtual Assistant</p>
+                <div class="flex items-center gap-3">
+                    <div class="logo-placeholder">AI</div>
+                    <div>
+                        <h1 class="text-xl font-bold">AiVA</h1>
+                        <p class="text-xs text-gray-400">AI Virtual Assistant</p>
+                    </div>
                 </div>
                 <div class="flex gap-2">
                     <button id="newChatBtn" class="p-2 hover:bg-gray-700 rounded" title="New Chat">+</button>
                     <button id="settingsBtn" class="p-2 hover:bg-gray-700 rounded" title="Settings">⚙</button>
+                    <button id="archiveBtn" class="p-2 hover:bg-gray-700 rounded" title="Archives">📁</button>
                 </div>
             </div>
 
@@ -172,7 +262,7 @@
             <!-- User Info -->
             <div class="p-4 border-t border-gray-700">
                 <div id="userInfo" class="flex items-center gap-3">
-                    <div id="userAvatar" class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold"></div>
+                    <div id="userAvatar" class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-content center text-sm font-bold"></div>
                     <div class="flex-1">
                         <div id="userName" class="text-sm font-medium">User</div>
                         <div class="text-xs text-gray-400">Online</div>
@@ -184,7 +274,7 @@
         <!-- Chat Area -->
         <div class="flex-1 flex flex-col">
             <!-- Chat Header -->
-            <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center">
+            <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center relative">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold">AI</div>
                     <div>
@@ -192,15 +282,24 @@
                         <div id="statusIndicator" class="text-xs text-gray-400">Online</div>
                     </div>
                 </div>
-                <button id="chatMenuBtn" class="p-2 hover:bg-gray-700 rounded">⋮</button>
+                <div class="flex items-center gap-2">
+                    <div id="messageCount" class="text-sm text-gray-400">0/12</div>
+                    <button id="chatMenuBtn" class="p-2 hover:bg-gray-700 rounded">⋮</button>
+                </div>
+                <!-- Chat Menu Dropdown -->
+                <div id="chatDropdown" class="dropdown">
+                    <button id="archiveChat">📁 Archive Chat</button>
+                    <button id="deleteChat" class="text-red-400">🗑️ Delete Chat</button>
+                </div>
             </div>
 
             <!-- Messages -->
             <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div class="text-center text-gray-500 mt-8">
-                    <div class="text-4xl mb-2">🤖</div>
+                    <div class="logo-placeholder mx-auto mb-4 pulse">AI</div>
                     <h3 class="text-lg font-medium mb-1">Welcome to AiVA</h3>
                     <p class="text-sm">Your AI Virtual Assistant is ready to help!</p>
+                    <p class="text-xs text-gray-600 mt-2">You can send up to 12 messages per chat</p>
                 </div>
             </div>
 
@@ -227,8 +326,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
     <script>
-
-        // Firebase Configuration (replace with your config)
+        // Firebase Configuration
         const firebaseConfig = {
           apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
           authDomain: "aiva-9abbb.firebaseapp.com",
@@ -247,6 +345,9 @@
         let currentChatId = null;
         let conversationHistory = [];
         let chatHistoryData = {};
+        let messageCount = 0;
+        let archivedChats = {};
+        let hasAcceptedTerms = false;
 
         // Server configuration
         const SERVER_BASE = "http://localhost:3000"; // Change for production
@@ -256,6 +357,8 @@
             termsModal: document.getElementById('termsModal'),
             authModal: document.getElementById('authModal'),
             settingsModal: document.getElementById('settingsModal'),
+            archiveModal: document.getElementById('archiveModal'),
+            warningBanner: document.getElementById('warningBanner'),
             mainApp: document.getElementById('mainApp'),
             loginForm: document.getElementById('loginForm'),
             signUpForm: document.getElementById('signUpForm'),
@@ -266,13 +369,41 @@
             userInfo: document.getElementById('userInfo'),
             userName: document.getElementById('userName'),
             userAvatar: document.getElementById('userAvatar'),
-            statusIndicator: document.getElementById('statusIndicator')
+            statusIndicator: document.getElementById('statusIndicator'),
+            messageCount: document.getElementById('messageCount'),
+            chatDropdown: document.getElementById('chatDropdown'),
+            archivedChats: document.getElementById('archivedChats')
         };
 
         // Initialize app
         function initApp() {
+            loadUserPreferences();
             setupEventListeners();
-            showTermsModal();
+            if (hasAcceptedTerms) {
+                elements.termsModal.classList.add('hidden');
+                checkAuthState();
+            } else {
+                showTermsModal();
+            }
+        }
+
+        // Load user preferences from localStorage
+        function loadUserPreferences() {
+            hasAcceptedTerms = localStorage.getItem('aivaTermsAccepted') === 'true';
+            const savedArchived = localStorage.getItem('aivaArchivedChats');
+            if (savedArchived) {
+                try {
+                    archivedChats = JSON.parse(savedArchived);
+                } catch (e) {
+                    archivedChats = {};
+                }
+            }
+        }
+
+        // Save user preferences
+        function saveUserPreferences() {
+            localStorage.setItem('aivaTermsAccepted', 'true');
+            localStorage.setItem('aivaArchivedChats', JSON.stringify(archivedChats));
         }
 
         // Terms Modal
@@ -281,6 +412,8 @@
         }
 
         document.getElementById('acceptTerms').addEventListener('click', () => {
+            hasAcceptedTerms = true;
+            saveUserPreferences();
             elements.termsModal.classList.add('hidden');
             checkAuthState();
         });
@@ -338,7 +471,14 @@
             document.getElementById('newChatBtn').addEventListener('click', startNewChat);
             document.getElementById('settingsBtn').addEventListener('click', showSettings);
             document.getElementById('closeSettings').addEventListener('click', hideSettings);
+            document.getElementById('archiveBtn').addEventListener('click', showArchive);
+            document.getElementById('closeArchive').addEventListener('click', hideArchive);
             document.getElementById('clearHistory').addEventListener('click', clearChatHistory);
+            
+            // Chat menu
+            document.getElementById('chatMenuBtn').addEventListener('click', toggleChatDropdown);
+            document.getElementById('archiveChat').addEventListener('click', archiveCurrentChat);
+            document.getElementById('deleteChat').addEventListener('click', deleteCurrentChat);
             
             // Message input
             elements.messageInput.addEventListener('keypress', (e) => {
@@ -353,6 +493,13 @@
 
             // Search chats
             document.getElementById('searchChats').addEventListener('input', filterChats);
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#chatMenuBtn') && !e.target.closest('#chatDropdown')) {
+                    elements.chatDropdown.classList.remove('active');
+                }
+            });
         }
 
         // Auth functions
@@ -400,6 +547,7 @@
                 currentChatId = null;
                 conversationHistory = [];
                 chatHistoryData = {};
+                messageCount = 0;
             } catch (error) {
                 alert('Sign out failed: ' + error.message);
             }
@@ -418,24 +566,47 @@
         function startNewChat() {
             currentChatId = generateChatId();
             conversationHistory = [];
+            messageCount = 0;
+            updateMessageCount();
+            hideWarningBanner();
             elements.messagesContainer.innerHTML = `
                 <div class="text-center text-gray-500 mt-8">
-                    <div class="text-4xl mb-2">🤖</div>
+                    <div class="logo-placeholder mx-auto mb-4 pulse">AI</div>
                     <h3 class="text-lg font-medium mb-1">New Conversation</h3>
                     <p class="text-sm">How can I help you today?</p>
+                    <p class="text-xs text-gray-600 mt-2">You can send up to 12 messages per chat</p>
                 </div>
             `;
             elements.messageInput.focus();
+            elements.sendBtn.disabled = false;
+            elements.messageInput.disabled = false;
         }
 
         function generateChatId() {
             return 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
-        // Message handling
+        function updateMessageCount() {
+            elements.messageCount.textContent = `${messageCount}/12`;
+            if (messageCount >= 12) {
+                showWarningBanner();
+                elements.sendBtn.disabled = true;
+                elements.messageInput.disabled = true;
+            }
+        }
+
+        function showWarningBanner() {
+            elements.warningBanner.classList.remove('hidden');
+        }
+
+        function hideWarningBanner() {
+            elements.warningBanner.classList.add('hidden');
+        }
+
+        // Message handling with conversational context
         async function sendMessage() {
             const message = elements.messageInput.value.trim();
-            if (!message) return;
+            if (!message || messageCount >= 12) return;
 
             // Disable input
             elements.messageInput.disabled = true;
@@ -444,23 +615,35 @@
             // Add user message
             addMessage(message, 'user');
             elements.messageInput.value = '';
+            messageCount++;
+            updateMessageCount();
 
-            // Add to conversation history
+            // Add to conversation history with proper context
             conversationHistory.push({ role: 'user', content: message });
 
             // Show typing indicator
             showTypingIndicator();
 
             try {
-                // Send to AI
+                // Prepare messages with system prompt for context
+                const systemPrompt = {
+                    role: "system",
+                    content: "You are AiVA, a helpful AI assistant. Maintain conversational context and provide detailed, helpful responses. Remember previous messages in this conversation."
+                };
+
+                const messagesToSend = [systemPrompt, ...conversationHistory];
+
+                // Send to AI with full conversation context
                 const response = await fetch(`${SERVER_BASE}/api/query`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        messages: conversationHistory,
-                        model: document.getElementById('modelSelect')?.value || 'openai/gpt-oss-120b:together'
+                        messages: messagesToSend,
+                        model: document.getElementById('modelSelect')?.value || 'openai/gpt-oss-120b:together',
+                        max_tokens: 2048,
+                        temperature: 0.7
                     })
                 });
 
@@ -471,7 +654,7 @@
                     // Add AI response
                     addMessage(data.replyText, 'assistant');
                     
-                    // Add to conversation history
+                    // Add to conversation history to maintain context
                     conversationHistory.push({ role: 'assistant', content: data.replyText });
                     
                     // Save conversation to Firebase
@@ -481,14 +664,16 @@
                 }
             } catch (error) {
                 hideTypingIndicator();
-                addMessage('Sorry, I cannot connect to the AI service right now.', 'assistant');
+                addMessage('Sorry, I cannot connect to the AI service right now. Please check your connection and try again.', 'assistant');
                 console.error('AI query error:', error);
             }
 
-            // Re-enable input
-            elements.messageInput.disabled = false;
-            elements.sendBtn.disabled = false;
-            elements.messageInput.focus();
+            // Re-enable input if under limit
+            if (messageCount < 12) {
+                elements.messageInput.disabled = false;
+                elements.sendBtn.disabled = false;
+                elements.messageInput.focus();
+            }
             autoResize();
         }
 
@@ -571,13 +756,14 @@
         function saveChatToHistory() {
             if (!currentUser || !currentChatId) return;
 
-            const chatTitle = conversationHistory[0]?.content?.substring(0, 50) || 'New Chat';
+            const chatTitle = conversationHistory.find(msg => msg.role === 'user')?.content?.substring(0, 50) || 'New Chat';
             const chatData = {
                 id: currentChatId,
                 title: chatTitle,
                 messages: conversationHistory,
                 timestamp: Date.now(),
-                userId: currentUser.uid
+                userId: currentUser.uid,
+                messageCount: messageCount
             };
 
             chatHistoryData[currentChatId] = chatData;
@@ -603,6 +789,7 @@
             chatHistoryContainer.innerHTML = '';
 
             const chats = Object.values(chatHistoryData)
+                .filter(chat => !archivedChats[chat.id])
                 .sort((a, b) => b.timestamp - a.timestamp);
 
             chats.forEach(chat => {
@@ -613,7 +800,10 @@
                 
                 chatItem.innerHTML = `
                     <div class="font-medium text-sm truncate">${chat.title}</div>
-                    <div class="text-xs text-gray-400">${new Date(chat.timestamp).toLocaleDateString()}</div>
+                    <div class="text-xs text-gray-400 flex justify-between">
+                        <span>${new Date(chat.timestamp).toLocaleDateString()}</span>
+                        <span>${chat.messageCount || 0}/12</span>
+                    </div>
                 `;
                 
                 chatItem.addEventListener('click', () => loadChat(chat));
@@ -624,13 +814,24 @@
         function loadChat(chat) {
             currentChatId = chat.id;
             conversationHistory = chat.messages || [];
+            messageCount = chat.messageCount || conversationHistory.filter(msg => msg.role === 'user').length;
+            updateMessageCount();
             
             // Clear messages and rebuild
             elements.messagesContainer.innerHTML = '';
             
-            conversationHistory.forEach(msg => {
-                addMessage(msg.content, msg.role);
-            });
+            const userMessages = conversationHistory.filter(msg => msg.role === 'user');
+            const assistantMessages = conversationHistory.filter(msg => msg.role === 'assistant');
+            
+            // Rebuild conversation display
+            for (let i = 0; i < Math.max(userMessages.length, assistantMessages.length); i++) {
+                if (userMessages[i]) {
+                    addMessage(userMessages[i].content, 'user');
+                }
+                if (assistantMessages[i]) {
+                    addMessage(assistantMessages[i].content, 'assistant');
+                }
+            }
             
             updateChatHistoryUI();
         }
@@ -641,7 +842,10 @@
             if (confirm('Are you sure you want to clear all chat history?')) {
                 database.ref(`chats/${currentUser.uid}`).remove();
                 chatHistoryData = {};
+                archivedChats = {};
+                saveUserPreferences();
                 updateChatHistoryUI();
+                updateArchivedChatsUI();
                 startNewChat();
             }
         }
@@ -656,7 +860,104 @@
             });
         }
 
-        // Settings
+        // Chat dropdown menu functions
+        function toggleChatDropdown() {
+            elements.chatDropdown.classList.toggle('active');
+        }
+
+        function archiveCurrentChat() {
+            if (!currentChatId || !chatHistoryData[currentChatId]) return;
+            
+            archivedChats[currentChatId] = chatHistoryData[currentChatId];
+            saveUserPreferences();
+            updateChatHistoryUI();
+            updateArchivedChatsUI();
+            elements.chatDropdown.classList.remove('active');
+            startNewChat();
+        }
+
+        function deleteCurrentChat() {
+            if (!currentChatId) return;
+            
+            if (confirm('Are you sure you want to delete this chat?')) {
+                if (currentUser && chatHistoryData[currentChatId]) {
+                    database.ref(`chats/${currentUser.uid}/${currentChatId}`).remove();
+                }
+                delete chatHistoryData[currentChatId];
+                delete archivedChats[currentChatId];
+                saveUserPreferences();
+                updateChatHistoryUI();
+                updateArchivedChatsUI();
+                elements.chatDropdown.classList.remove('active');
+                startNewChat();
+            }
+        }
+
+        // Archive modal functions
+        function showArchive() {
+            updateArchivedChatsUI();
+            elements.archiveModal.classList.remove('hidden');
+        }
+
+        function hideArchive() {
+            elements.archiveModal.classList.add('hidden');
+        }
+
+        function updateArchivedChatsUI() {
+            const archivedContainer = elements.archivedChats;
+            archivedContainer.innerHTML = '';
+
+            const archived = Object.values(archivedChats)
+                .sort((a, b) => b.timestamp - a.timestamp);
+
+            if (archived.length === 0) {
+                archivedContainer.innerHTML = '<p class="text-gray-400 text-center">No archived chats</p>';
+                return;
+            }
+
+            archived.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = 'p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors bg-gray-800';
+                
+                chatItem.innerHTML = `
+                    <div class="font-medium text-sm truncate">${chat.title}</div>
+                    <div class="text-xs text-gray-400 flex justify-between">
+                        <span>${new Date(chat.timestamp).toLocaleDateString()}</span>
+                        <div class="flex gap-2">
+                            <button onclick="unarchiveChat('${chat.id}')" class="text-blue-400 hover:text-blue-300">Restore</button>
+                            <button onclick="deleteArchivedChat('${chat.id}')" class="text-red-400 hover:text-red-300">Delete</button>
+                        </div>
+                    </div>
+                `;
+                
+                archivedContainer.appendChild(chatItem);
+            });
+        }
+
+        function unarchiveChat(chatId) {
+            if (archivedChats[chatId]) {
+                chatHistoryData[chatId] = archivedChats[chatId];
+                delete archivedChats[chatId];
+                saveUserPreferences();
+                updateChatHistoryUI();
+                updateArchivedChatsUI();
+                
+                // Save to Firebase if user is logged in
+                if (currentUser) {
+                    database.ref(`chats/${currentUser.uid}/${chatId}`).set(chatHistoryData[chatId]);
+                }
+            }
+        }
+
+        function deleteArchivedChat(chatId) {
+            if (confirm('Are you sure you want to permanently delete this chat?')) {
+                delete archivedChats[chatId];
+                saveUserPreferences();
+                updateArchivedChatsUI();
+            }
+        }
+
+        // Settings functions
         function showSettings() {
             elements.settingsModal.classList.remove('hidden');
         }
@@ -664,6 +965,10 @@
         function hideSettings() {
             elements.settingsModal.classList.add('hidden');
         }
+
+        // Make functions global for onclick handlers
+        window.unarchiveChat = unarchiveChat;
+        window.deleteArchivedChat = deleteArchivedChat;
 
         // Initialize app when DOM is loaded
         document.addEventListener('DOMContentLoaded', initApp);
