@@ -1,4 +1,4 @@
-        // Firebase Configuration
+  // Firebase Configuration
         const firebaseConfig = {
           apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
           authDomain: "aiva-9abbb.firebaseapp.com",
@@ -41,57 +41,22 @@
             userInfo: document.getElementById('userInfo'),
             userName: document.getElementById('userName'),
             userAvatar: document.getElementById('userAvatar'),
-            userPhoto: document.getElementById('userPhoto'),
-            userInitial: document.getElementById('userInitial'),
             statusIndicator: document.getElementById('statusIndicator'),
             messageCount: document.getElementById('messageCount'),
-            messageCountMobile: document.getElementById('messageCountMobile'),
             chatDropdown: document.getElementById('chatDropdown'),
-            archivedChats: document.getElementById('archivedChats'),
-            sidebar: document.getElementById('sidebar'),
-            mobileOverlay: document.getElementById('mobileOverlay')
+            archivedChats: document.getElementById('archivedChats')
         };
 
         // Initialize app
         function initApp() {
             loadUserPreferences();
             setupEventListeners();
-            setupMobileEvents();
             if (hasAcceptedTerms) {
                 elements.termsModal.classList.add('hidden');
                 checkAuthState();
             } else {
                 showTermsModal();
             }
-        }
-
-        // Mobile event handlers
-        function setupMobileEvents() {
-            document.getElementById('mobileMenuToggle').addEventListener('click', openMobileSidebar);
-            document.getElementById('closeMobileSidebar').addEventListener('click', closeMobileSidebar);
-            elements.mobileOverlay.addEventListener('click', closeMobileSidebar);
-            
-            // Mobile chat menu
-            document.getElementById('chatMenuBtnMobile').addEventListener('click', toggleChatDropdown);
-            
-            // Close sidebar when chat is selected on mobile
-            document.addEventListener('click', (e) => {
-                if (window.innerWidth <= 768 && e.target.closest('#chatHistory')) {
-                    setTimeout(() => closeMobileSidebar(), 300);
-                }
-            });
-        }
-
-        function openMobileSidebar() {
-            elements.sidebar.classList.add('active');
-            elements.mobileOverlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeMobileSidebar() {
-            elements.sidebar.classList.remove('active');
-            elements.mobileOverlay.classList.remove('active');
-            document.body.style.overflow = 'auto';
         }
 
         // Load user preferences from localStorage
@@ -203,7 +168,7 @@
 
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
-                if (!e.target.closest('#chatMenuBtn') && !e.target.closest('#chatMenuBtnMobile') && !e.target.closest('#chatDropdown')) {
+                if (!e.target.closest('#chatMenuBtn') && !e.target.closest('#chatDropdown')) {
                     elements.chatDropdown.classList.remove('active');
                 }
             });
@@ -264,18 +229,8 @@
         function loadUserData() {
             if (currentUser) {
                 elements.userName.textContent = currentUser.displayName || currentUser.email;
-                
-                // Handle profile picture
-                if (currentUser.photoURL) {
-                    elements.userPhoto.src = currentUser.photoURL;
-                    elements.userPhoto.classList.remove('hidden');
-                    elements.userInitial.classList.add('hidden');
-                } else {
-                    elements.userPhoto.classList.add('hidden');
-                    elements.userInitial.classList.remove('hidden');
-                    const initial = (currentUser.displayName || currentUser.email).charAt(0).toUpperCase();
-                    elements.userInitial.textContent = initial;
-                }
+                const initial = (currentUser.displayName || currentUser.email).charAt(0).toUpperCase();
+                elements.userAvatar.textContent = initial;
             }
         }
 
@@ -297,11 +252,6 @@
             elements.messageInput.focus();
             elements.sendBtn.disabled = false;
             elements.messageInput.disabled = false;
-            
-            // Close mobile sidebar after starting new chat
-            if (window.innerWidth <= 768) {
-                closeMobileSidebar();
-            }
         }
 
         function generateChatId() {
@@ -309,12 +259,7 @@
         }
 
         function updateMessageCount() {
-            const countText = `${messageCount}/12`;
-            elements.messageCount.textContent = countText;
-            if (elements.messageCountMobile) {
-                elements.messageCountMobile.textContent = countText;
-            }
-            
+            elements.messageCount.textContent = `${messageCount}/12`;
             if (messageCount >= 12) {
                 showWarningBanner();
                 elements.sendBtn.disabled = true;
@@ -368,7 +313,7 @@
                     },
                     body: JSON.stringify({
                         messages: messagesToSend,
-                        model: 'openai/gpt-oss-120b:together', // Fixed to only GPT model
+                        model: document.getElementById('modelSelect')?.value || 'openai/gpt-oss-120b:together',
                         max_tokens: 2048,
                         temperature: 0.7
                     })
@@ -384,8 +329,8 @@
                     // Add to conversation history to maintain context
                     conversationHistory.push({ role: 'assistant', content: data.replyText });
                     
-                    // Save conversation to Firebase - FIXED
-                    await saveChatToHistory();
+                    // Save conversation to Firebase
+                    saveChatToHistory();
                 } else {
                     addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
                 }
@@ -479,8 +424,8 @@
             elements.messageInput.style.height = Math.min(elements.messageInput.scrollHeight, 128) + 'px';
         }
 
-        // Chat history management - FIXED
-        async function saveChatToHistory() {
+        // Chat history management
+        function saveChatToHistory() {
             if (!currentUser || !currentChatId) return;
 
             const chatTitle = conversationHistory.find(msg => msg.role === 'user')?.content?.substring(0, 50) || 'New Chat';
@@ -493,16 +438,10 @@
                 messageCount: messageCount
             };
 
-            // Update local data first
             chatHistoryData[currentChatId] = chatData;
             
-            try {
-                // Save to Firebase with proper error handling
-                await database.ref(`chats/${currentUser.uid}/${currentChatId}`).set(chatData);
-                console.log('Chat saved successfully');
-            } catch (error) {
-                console.error('Error saving chat:', error);
-            }
+            // Save to Firebase
+            database.ref(`chats/${currentUser.uid}/${currentChatId}`).set(chatData);
             
             // Update UI
             updateChatHistoryUI();
@@ -512,13 +451,8 @@
             if (!currentUser) return;
 
             database.ref(`chats/${currentUser.uid}`).on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    chatHistoryData = data;
-                    updateChatHistoryUI();
-                }
-            }, (error) => {
-                console.error('Error loading chat history:', error);
+                chatHistoryData = snapshot.val() || {};
+                updateChatHistoryUI();
             });
         }
 
@@ -551,28 +485,27 @@
 
         function loadChat(chat) {
             currentChatId = chat.id;
-            conversationHistory = [...(chat.messages || [])]; // Create a copy
+            conversationHistory = chat.messages || [];
             messageCount = chat.messageCount || conversationHistory.filter(msg => msg.role === 'user').length;
             updateMessageCount();
             
             // Clear messages and rebuild
             elements.messagesContainer.innerHTML = '';
             
-            // Rebuild conversation display in correct order
-            const messages = [...conversationHistory];
-            for (let i = 0; i < messages.length; i++) {
-                const msg = messages[i];
-                if (msg.role === 'user' || msg.role === 'assistant') {
-                    addMessage(msg.content, msg.role);
+            const userMessages = conversationHistory.filter(msg => msg.role === 'user');
+            const assistantMessages = conversationHistory.filter(msg => msg.role === 'assistant');
+            
+            // Rebuild conversation display
+            for (let i = 0; i < Math.max(userMessages.length, assistantMessages.length); i++) {
+                if (userMessages[i]) {
+                    addMessage(userMessages[i].content, 'user');
+                }
+                if (assistantMessages[i]) {
+                    addMessage(assistantMessages[i].content, 'assistant');
                 }
             }
             
             updateChatHistoryUI();
-            
-            // Close mobile sidebar after selecting chat
-            if (window.innerWidth <= 768) {
-                setTimeout(() => closeMobileSidebar(), 300);
-            }
         }
 
         function clearChatHistory() {
