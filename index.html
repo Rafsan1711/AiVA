@@ -8,12 +8,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+   <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-900 text-white h-screen overflow-hidden">
+    <!-- Mobile Overlay -->
+    <div id="mobileOverlay" class="mobile-overlay"></div>
+
     <!-- Terms Modal -->
     <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-gray-800 p-8 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-700">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-700 modal-mobile">
             <div class="flex items-center gap-3 mb-6">
                 <div class="logo-placeholder">AI</div>
                 <h2 class="text-2xl font-bold">Terms of Service & Privacy Policy</h2>
@@ -41,7 +44,7 @@
 
     <!-- Auth Modal -->
     <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full mx-4 border border-gray-700">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full mx-4 border border-gray-700 modal-mobile">
             <div class="text-center mb-6">
                 <div class="logo-placeholder mx-auto mb-3">AI</div>
                 <h1 class="text-4xl font-bold mb-2">AiVA</h1>
@@ -77,7 +80,7 @@
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700 modal-mobile">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold">Settings</h2>
                 <button id="closeSettings" class="text-gray-400 hover:text-white text-2xl">&times;</button>
@@ -105,7 +108,7 @@
 
     <!-- Archive Modal -->
     <div id="archiveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700 modal-mobile">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold">Archived Chats</h2>
                 <button id="closeArchive" class="text-gray-400 hover:text-white text-2xl">&times;</button>
@@ -123,8 +126,8 @@
 
     <!-- Main App -->
     <div id="mainApp" class="flex h-screen hidden">
-        <!-- Sidebar -->
-        <div class="w-80 bg-gray-800 flex flex-col">
+        <!-- Desktop Sidebar -->
+        <div class="desktop-sidebar w-80 bg-gray-800 flex-col">
             <!-- Header -->
             <div class="p-4 border-b border-gray-700 flex justify-between items-center">
                 <div class="flex items-center gap-3">
@@ -156,7 +159,7 @@
             <!-- User Info -->
             <div class="p-4 border-t border-gray-700">
                 <div id="userInfo" class="flex items-center gap-3">
-                    <div id="userAvatar" class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-content center text-sm font-bold"></div>
+                    <div id="userAvatar" class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold"></div>
                     <div class="flex-1">
                         <div id="userName" class="text-sm font-medium">User</div>
                         <div class="text-xs text-gray-400">Online</div>
@@ -165,10 +168,66 @@
             </div>
         </div>
 
+        <!-- Mobile Sidebar -->
+        <div id="mobileSidebar" class="sidebar-mobile bg-gray-800 flex flex-col md:hidden">
+            <!-- Header -->
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="logo-placeholder">AI</div>
+                    <div>
+                        <h1 class="text-xl font-bold">AiVA</h1>
+                        <p class="text-xs text-gray-400">AI Virtual Assistant</p>
+                    </div>
+                </div>
+                <button id="closeMobileSidebar" class="p-2 hover:bg-gray-700 rounded">✕</button>
+            </div>
+
+            <!-- Mobile Controls -->
+            <div class="p-4 border-b border-gray-700">
+                <div class="flex gap-2 mb-3">
+                    <button id="newChatBtnMobile" class="flex-1 bg-blue-600 hover:bg-blue-700 p-2 rounded text-sm">New Chat</button>
+                    <button id="settingsBtnMobile" class="p-2 hover:bg-gray-700 rounded" title="Settings">⚙</button>
+                    <button id="archiveBtnMobile" class="p-2 hover:bg-gray-700 rounded" title="Archives">📁</button>
+                </div>
+                <input id="searchChatsMobile" type="text" placeholder="Search conversations..." class="w-full p-2 bg-gray-700 rounded text-sm border border-gray-600 focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Chat History -->
+            <div class="flex-1 overflow-y-auto sidebar-scroll">
+                <div id="chatHistoryMobile" class="p-2 space-y-2">
+                    <!-- Chat items will be populated here -->
+                </div>
+            </div>
+
+            <!-- User Info -->
+            <div class="p-4 border-t border-gray-700">
+                <div id="userInfoMobile" class="flex items-center gap-3">
+                    <div id="userAvatarMobile" class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold"></div>
+                    <div class="flex-1">
+                        <div id="userNameMobile" class="text-sm font-medium">User</div>
+                        <div class="text-xs text-gray-400">Online</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Chat Area -->
-        <div class="flex-1 flex flex-col">
-            <!-- Chat Header -->
-            <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center relative">
+        <div class="flex-1 flex flex-col mobile-chat-area">
+            <!-- Mobile Header (visible only on mobile) -->
+            <div class="mobile-header mobile-only">
+                <button id="openMobileSidebar" class="p-2 hover:bg-gray-700 rounded">☰</button>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold">AI</div>
+                    <div class="font-medium">AiVA</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div id="messageCountMobile" class="text-sm text-gray-400">0/12</div>
+                    <button id="chatMenuBtnMobile" class="p-2 hover:bg-gray-700 rounded">⋮</button>
+                </div>
+            </div>
+
+            <!-- Desktop Chat Header -->
+            <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center relative hidden md:flex">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold">AI</div>
                     <div>
@@ -187,8 +246,14 @@
                 </div>
             </div>
 
+            <!-- Mobile Chat Menu Dropdown -->
+            <div id="chatDropdownMobile" class="dropdown dropdown-mobile md:hidden">
+                <button id="archiveChatMobile">📁 Archive Chat</button>
+                <button id="deleteChatMobile" class="text-red-400">🗑️ Delete Chat</button>
+            </div>
+
             <!-- Messages -->
-            <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 mobile-messages">
                 <div class="text-center text-gray-500 mt-8">
                     <div class="logo-placeholder mx-auto mb-4 pulse">AI</div>
                     <h3 class="text-lg font-medium mb-1">Welcome to AiVA</h3>
@@ -198,7 +263,7 @@
             </div>
 
             <!-- Input Area -->
-            <div class="p-4 border-t border-gray-700">
+            <div class="p-4 border-t border-gray-700 mobile-input">
                 <div class="flex gap-3 items-end">
                     <div class="flex-1">
                         <textarea id="messageInput" 
@@ -219,8 +284,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-    
-        <script src="script.js"></script>
-    
+   <script src="script.js"></script>
 </body>
 </html>
