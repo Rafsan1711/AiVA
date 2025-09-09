@@ -1,3 +1,5 @@
+তারপর যদি আমি yes বলি তাইলে সে আবার সেই কোড card টা দেখাবে এবং প্রয়োজনীয় update করে last code দিবে। last code ও debug করতে বলা যাবে, তো ধরে নাও এবার debug করতে বলার পর সে দেখিয়ে বলল সবই ঠিক আছে। তারপর আমি তার last code টা নিয়ে test করে দেখলাম যে হ্যা সবই ঠিক করেছে, তাহলে আমি করব কী চ্যাটের একদম উপরে থাকা source code card এ গিয়ে last code টা সেখানে paste করে update করে দিবো।
+
 তো সে ৫ ধরনের response এ সব করবে,
 
 ১. feature generate with Ai বাটন ক্লিক করলে রেস্পন্স input box এ উঠবে।
@@ -12,5 +14,4 @@
 
 এখন আমি তোমাকে সব ধরনের scenario বলে শোনাবো, যেন তুমি স্পষ্ট বুঝতে পারো কী হবে সেখানে।
 
-আমার Ai Chatbot এ একটা feature আছে plugin। তো plugins এ আরেকটা plugin যোগ করবে। এবং plugin enable করার পর plugin যেখানে দেখানো হয় সেখানে দেখানো হবে।
- তো আমাদের নতুন plugin এ ক্লিক করার পর একটা চ্যাট open হবে, আর এইটা একটু ভিন্ন ধর্মী chat কারণ এই plugin দিয়ে শুধুমাত্র একটাই chat তৈরি করা যাবে, অন্যান্য chat বা plugin এর মত multiple chat খোলা যাবে না। তো আমি chat খুললাম এবং source code card এ ৩টা ফাইল খুললাম index.html ও server.js ও package.json নামে। তো সব কোড firebase realtime database এ save হয়ে গেলো। তারপর ধরে নেই আমি feature ai generated দিলাম, আর input box এ লেখা উঠল "sign up/log in system upgrade " এর ফিচারের কথা। তো আমি এটাই input দিয়ে দিলাম। এরপর ai এই ফিচারটা পড়ে নিয়ে আমাকে একটা overview দিলো যে সে কী কী বুঝেছে। তারপর ধরে নেই আমি not satisfied দিয়ে আবার ইনপুট দিয়ে তাকে আরো কয়েকটা জিনিস বুঝালাম যা সে তখন বুঝতে পারে নি। তারপর এবার আমি দিলাম satisfied। 
+
