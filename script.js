@@ -1,11 +1,11 @@
   // Firebase Configuration
         const firebaseConfig = {
-          apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
-          authDomain: "aiva-9abbb.firebaseapp.com",
-         projectId: "aiva-9abbb",
-         storageBucket: "aiva-9abbb.firebasestorage.app",
-         messagingSenderId: "565052629821",
-         appId: "1:565052629821:web:4a0083611ff11011da1b54"
+            apiKey: "AIzaSyD9QkbeIywF3HN1bS0A0g2uIRVXOC6q1wM",
+            authDomain: "aiva-9abbb.firebaseapp.com",
+            projectId: "aiva-9abbb",
+            storageBucket: "aiva-9abbb.firebasestorage.app",
+            messagingSenderId: "565052629821",
+            appId: "1:565052629821:web:4a0083611ff11011da1b54"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -20,9 +20,12 @@
         let messageCount = 0;
         let archivedChats = {};
         let hasAcceptedTerms = false;
+        let enabledPlugins = {};
+        let isChessConversation = false;
+        let chessGameData = null;
 
         // Server configuration
-        const SERVER_BASE = "https://aiva-gwm9.onrender.com"; // Change for production
+        const SERVER_BASE = "https://aiva-gwm9.onrender.com";
 
         // DOM Elements
         const elements = {
@@ -30,6 +33,7 @@
             authModal: document.getElementById('authModal'),
             settingsModal: document.getElementById('settingsModal'),
             archiveModal: document.getElementById('archiveModal'),
+            pluginsModal: document.getElementById('pluginsModal'),
             warningBanner: document.getElementById('warningBanner'),
             mainApp: document.getElementById('mainApp'),
             loginForm: document.getElementById('loginForm'),
@@ -38,14 +42,77 @@
             messageInput: document.getElementById('messageInput'),
             sendBtn: document.getElementById('sendBtn'),
             chatHistory: document.getElementById('chatHistory'),
+            mobileChatHistory: document.getElementById('mobileChatHistory'),
             userInfo: document.getElementById('userInfo'),
             userName: document.getElementById('userName'),
             userAvatar: document.getElementById('userAvatar'),
+            userPhoto: document.getElementById('userPhoto'),
+            userInitial: document.getElementById('userInitial'),
+            mobileUserName: document.getElementById('mobileUserName'),
+            mobileUserAvatar: document.getElementById('mobileUserAvatar'),
+            mobileUserPhoto: document.getElementById('mobileUserPhoto'),
+            mobileUserInitial: document.getElementById('mobileUserInitial'),
             statusIndicator: document.getElementById('statusIndicator'),
             messageCount: document.getElementById('messageCount'),
+            mobileMessageCount: document.getElementById('mobileMessageCount'),
             chatDropdown: document.getElementById('chatDropdown'),
-            archivedChats: document.getElementById('archivedChats')
+            archivedChats: document.getElementById('archivedChats'),
+            enabledPlugins: document.getElementById('enabledPlugins'),
+            mobileEnabledPlugins: document.getElementById('mobileEnabledPlugins'),
+            mobileSidebar: document.getElementById('mobileSidebar'),
+            mobileOverlay: document.getElementById('mobileOverlay'),
+            chatTitle: document.getElementById('chatTitle'),
+            chatAvatar: document.getElementById('chatAvatar')
         };
+
+        // Chess Engine Variables (from original chess code)
+        let chessBoard = null;
+        let chessGame = null;
+        let globalSum = 0;
+        let aiMode = 'stockfish';
+        let stockfishEngine = null;
+        let engineReady = false;
+        let engineBusy = false;
+        let stockfishMovetime = 800;
+        let engineOpts = {};
+        let engineDefaultHandler = null;
+        let inputLocked = false;
+        let processingMove = false;
+        let selectedSquare = null;
+        let legalTargets = [];
+        let pieceImgResolved = {};
+        let pgn_moves = [];
+
+        // Chess piece candidates (from original code)
+        const pieceCandidates = {
+            'wK': ['pieces/wK.svg', 'pieces/wKing.svg', 'pieces/WK.svg'],
+            'wQ': ['pieces/wQ.svg', 'pieces/wQueen.svg', 'pieces/WQ.svg'],
+            'wR': ['pieces/wR.svg', 'pieces/wRook.svg', 'pieces/WR.svg'],
+            'wB': ['pieces/wB.svg', 'pieces/wBishop.svg', 'pieces/WB.svg'],
+            'wN': ['pieces/wN.svg', 'pieces/wKnight.svg', 'pieces/WN.svg', 'pieces/wn.svg'],
+            'wP': ['pieces/wP.svg', 'pieces/wPawn.svg', 'pieces/WP.svg'],
+            'bK': ['pieces/bK.svg', 'pieces/bKing.svg', 'pieces/BK.svg'],
+            'bQ': ['pieces/bQ.svg', 'pieces/bQueen.svg', 'pieces/BQ.svg'],
+            'bR': ['pieces/bR.svg', 'pieces/bRook.svg', 'pieces/BR.svg'],
+            'bB': ['pieces/bB.svg', 'pieces/bBishop.svg', 'pieces/BB.svg'],
+            'bN': ['pieces/bN.svg', 'pieces/bKnight.svg', 'pieces/BN.svg', 'pieces/bn.svg', 'pieces/black-knight.svg'],
+            'bP': ['pieces/bP.svg', 'pieces/bPawn.svg', 'pieces/BP.svg']
+        };
+
+        // Chess evaluation weights and position tables (from original code)
+        const weights = { p: 100, n: 280, b: 320, r: 479, q: 929, k: 60000, k_e: 60000 };
+        const pst_w = {
+            p: [[100, 100, 100, 100, 105, 100, 100, 100], [78, 83, 86, 73, 102, 82, 85, 90], [7, 29, 21, 44, 40, 31, 44, 7], [-17, 16, -2, 15, 14, 0, 15, -13], [-26, 3, 10, 9, 6, 1, 0, -23], [-22, 9, 5, -11, -10, -2, 3, -19], [-31, 8, -7, -37, -36, -14, 3, -31], [0, 0, 0, 0, 0, 0, 0, 0]],
+            n: [[-66, -53, -75, -75, -10, -55, -58, -70], [-3, -6, 100, -36, 4, 62, -4, -14], [10, 67, 1, 74, 73, 27, 62, -2], [24, 24, 45, 37, 33, 41, 25, 17], [-1, 5, 31, 21, 22, 35, 2, 0], [-18, 10, 13, 22, 18, 15, 11, -14], [-23, -15, 2, 0, 2, 0, -23, -20], [-74, -23, -26, -24, -19, -35, -22, -69]],
+            b: [[-59, -78, -82, -76, -23, -107, -37, -50], [-11, 20, 35, -42, -39, 31, 2, -22], [-9, 39, -32, 41, 52, -10, 28, -14], [25, 17, 20, 34, 26, 25, 15, 10], [13, 10, 17, 23, 17, 16, 0, 7], [14, 25, 24, 15, 8, 25, 20, 15], [19, 20, 11, 6, 7, 6, 20, 16], [-7, 2, -15, -12, -14, -15, -10, -10]],
+            r: [[35, 29, 33, 4, 37, 33, 56, 50], [55, 29, 56, 67, 55, 62, 34, 60], [19, 35, 28, 33, 45, 27, 25, 15], [0, 5, 16, 13, 18, -4, -9, -6], [-28, -35, -16, -21, -13, -29, -46, -30], [-42, -28, -42, -25, -25, -35, -26, -46], [-53, -38, -31, -26, -29, -43, -44, -53], [-30, -24, -18, 5, -2, -18, -31, -32]],
+            q: [[6, 1, -8, -104, 69, 24, 88, 26], [14, 32, 60, -10, 20, 76, 57, 24], [-2, 43, 32, 60, 72, 63, 43, 2], [1, -16, 22, 17, 25, 20, -13, -6], [-14, -15, -2, -5, -1, -10, -20, -22], [-30, -6, -13, -11, -16, -11, -16, -27], [-36, -18, 0, -19, -15, -15, -21, -38], [-39, -30, -31, -13, -31, -36, -34, -42]],
+            k: [[4, 54, 47, -99, -99, 60, 83, -62], [-32, 10, 55, 56, 56, 55, 10, 3], [-62, 12, -57, 44, -67, 28, 37, -31], [-55, 50, 11, -4, -19, 13, 0, -49], [-55, -43, -52, -28, -51, -47, -8, -50], [-47, -42, -43, -79, -64, -32, -29, -32], [-4, 3, -14, -50, -57, -18, 13, 4], [17, 30, -3, -14, 6, -1, 40, 18]],
+            k_e: [[-50, -40, -30, -20, -20, -30, -40, -50], [-30, -20, -10, 0, 0, -10, -20, -30], [-30, -10, 20, 30, 30, 20, -10, -30], [-30, -10, 30, 40, 40, 30, -10, -30], [-30, -10, 30, 40, 40, 30, -10, -30], [-30, -10, 20, 30, 30, 20, -10, -30], [-30, -30, 0, 0, 0, 0, -30, -30], [-50, -30, -30, -30, -30, -30, -30, -50]]
+        };
+        const pst_b = { p: pst_w['p'].slice().reverse(), n: pst_w['n'].slice().reverse(), b: pst_w['b'].slice().reverse(), r: pst_w['r'].slice().reverse(), q: pst_w['q'].slice().reverse(), k: pst_w['k'].slice().reverse(), k_e: pst_w['k_e'].slice().reverse() };
+        const pstOpponent = { w: pst_b, b: pst_w };
+        const pstSelf = { w: pst_w, b: pst_b };
 
         // Initialize app
         function initApp() {
@@ -70,12 +137,21 @@
                     archivedChats = {};
                 }
             }
+            const savedPlugins = localStorage.getItem('aivaEnabledPlugins');
+            if (savedPlugins) {
+                try {
+                    enabledPlugins = JSON.parse(savedPlugins);
+                } catch (e) {
+                    enabledPlugins = {};
+                }
+            }
         }
 
         // Save user preferences
         function saveUserPreferences() {
             localStorage.setItem('aivaTermsAccepted', 'true');
             localStorage.setItem('aivaArchivedChats', JSON.stringify(archivedChats));
+            localStorage.setItem('aivaEnabledPlugins', JSON.stringify(enabledPlugins));
         }
 
         // Terms Modal
@@ -116,6 +192,7 @@
             elements.authModal.classList.add('hidden');
             elements.mainApp.classList.remove('hidden');
             loadChatHistory();
+            updateEnabledPluginsUI();
             startNewChat();
         }
 
@@ -141,17 +218,31 @@
 
             // Main app buttons
             document.getElementById('newChatBtn').addEventListener('click', startNewChat);
+            document.getElementById('mobileNewChatBtn').addEventListener('click', () => {
+                startNewChat();
+                closeMobileSidebar();
+            });
             document.getElementById('settingsBtn').addEventListener('click', showSettings);
+            document.getElementById('mobileSettingsBtn').addEventListener('click', showSettings);
             document.getElementById('closeSettings').addEventListener('click', hideSettings);
             document.getElementById('archiveBtn').addEventListener('click', showArchive);
+            document.getElementById('mobileArchiveBtn').addEventListener('click', showArchive);
             document.getElementById('closeArchive').addEventListener('click', hideArchive);
+            document.getElementById('pluginsBtn').addEventListener('click', showPlugins);
+            document.getElementById('mobilePluginsBtn').addEventListener('click', showPlugins);
+            document.getElementById('closePlugins').addEventListener('click', hidePlugins);
             document.getElementById('clearHistory').addEventListener('click', clearChatHistory);
-            
+
+            // Mobile menu
+            document.getElementById('mobileMenuBtn').addEventListener('click', openMobileSidebar);
+            document.getElementById('closeMobileMenu').addEventListener('click', closeMobileSidebar);
+            elements.mobileOverlay.addEventListener('click', closeMobileSidebar);
+
             // Chat menu
             document.getElementById('chatMenuBtn').addEventListener('click', toggleChatDropdown);
             document.getElementById('archiveChat').addEventListener('click', archiveCurrentChat);
             document.getElementById('deleteChat').addEventListener('click', deleteCurrentChat);
-            
+
             // Message input
             elements.messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -159,12 +250,13 @@
                     sendMessage();
                 }
             });
-            
+
             elements.messageInput.addEventListener('input', autoResize);
             elements.sendBtn.addEventListener('click', sendMessage);
 
             // Search chats
             document.getElementById('searchChats').addEventListener('input', filterChats);
+            document.getElementById('mobileSearchChats').addEventListener('input', filterChats);
 
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
@@ -172,6 +264,17 @@
                     elements.chatDropdown.classList.remove('active');
                 }
             });
+        }
+
+        // Mobile Sidebar Functions
+        function openMobileSidebar() {
+            elements.mobileSidebar.classList.add('open');
+            elements.mobileOverlay.classList.add('active');
+        }
+
+        function closeMobileSidebar() {
+            elements.mobileSidebar.classList.remove('open');
+            elements.mobileOverlay.classList.remove('active');
         }
 
         // Auth functions
@@ -220,6 +323,7 @@
                 conversationHistory = [];
                 chatHistoryData = {};
                 messageCount = 0;
+                closeMobileSidebar();
             } catch (error) {
                 alert('Sign out failed: ' + error.message);
             }
@@ -228,9 +332,32 @@
         // User data management
         function loadUserData() {
             if (currentUser) {
-                elements.userName.textContent = currentUser.displayName || currentUser.email;
-                const initial = (currentUser.displayName || currentUser.email).charAt(0).toUpperCase();
-                elements.userAvatar.textContent = initial;
+                const displayName = currentUser.displayName || currentUser.email;
+                const photoURL = currentUser.photoURL;
+                
+                // Desktop user info
+                elements.userName.textContent = displayName;
+                elements.userInitial.textContent = displayName.charAt(0).toUpperCase();
+                
+                // Mobile user info
+                elements.mobileUserName.textContent = displayName;
+                elements.mobileUserInitial.textContent = displayName.charAt(0).toUpperCase();
+                
+                if (photoURL) {
+                    elements.userPhoto.src = photoURL;
+                    elements.userPhoto.classList.remove('hidden');
+                    elements.userInitial.style.display = 'none';
+                    
+                    elements.mobileUserPhoto.src = photoURL;
+                    elements.mobileUserPhoto.classList.remove('hidden');
+                    elements.mobileUserInitial.style.display = 'none';
+                } else {
+                    elements.userPhoto.classList.add('hidden');
+                    elements.userInitial.style.display = 'flex';
+                    
+                    elements.mobileUserPhoto.classList.add('hidden');
+                    elements.mobileUserInitial.style.display = 'flex';
+                }
             }
         }
 
@@ -239,16 +366,57 @@
             currentChatId = generateChatId();
             conversationHistory = [];
             messageCount = 0;
+            isChessConversation = false;
+            chessGameData = null;
             updateMessageCount();
             hideWarningBanner();
+            
+            // Reset chat title and avatar
+            elements.chatTitle.textContent = 'AiVA Assistant';
+            elements.chatAvatar.innerHTML = 'AI';
+            elements.chatAvatar.className = 'w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold';
+            
             elements.messagesContainer.innerHTML = `
                 <div class="text-center text-gray-500 mt-8">
                     <div class="logo-placeholder mx-auto mb-4 pulse">AI</div>
                     <h3 class="text-lg font-medium mb-1">New Conversation</h3>
                     <p class="text-sm">How can I help you today?</p>
-                    <p class="text-xs text-gray-600 mt-2">You can send up to 12 messages per chat</p>
+                    <p class="text-xs text-gray-600 mt-2">You can send up to 7 messages per chat</p>
                 </div>
             `;
+            elements.messageInput.focus();
+            elements.sendBtn.disabled = false;
+            elements.messageInput.disabled = false;
+        }
+
+        function startChessConversation() {
+            currentChatId = generateChatId();
+            conversationHistory = [];
+            messageCount = 0;
+            isChessConversation = true;
+            initializeChess();
+            updateMessageCount();
+            hideWarningBanner();
+            
+            // Set chess chat appearance
+            elements.chatTitle.textContent = 'Chess Master';
+            elements.chatAvatar.innerHTML = '♗';
+            elements.chatAvatar.className = 'w-8 h-8 chess-conversation rounded-full flex items-center justify-center text-sm font-bold text-white';
+            
+            elements.messagesContainer.innerHTML = `
+                <div class="text-center text-gray-500 mt-8">
+                    <div class="w-12 h-12 chess-conversation rounded-full flex items-center justify-center text-2xl mx-auto mb-4">♗</div>
+                    <h3 class="text-lg font-medium mb-1">Chess Master</h3>
+                    <p class="text-sm">Ready for a strategic chess battle?</p>
+                    <p class="text-xs text-gray-600 mt-2">Let's play some chess!</p>
+                </div>
+            `;
+            
+            // Add initial chess message
+            setTimeout(() => {
+                addMessage("Welcome to Chess Master! I'm excited to play chess with you. Would you like to start a game? Just say 'yes' or 'let's play' to begin our match!", 'assistant');
+            }, 500);
+            
             elements.messageInput.focus();
             elements.sendBtn.disabled = false;
             elements.messageInput.disabled = false;
@@ -259,8 +427,9 @@
         }
 
         function updateMessageCount() {
-            elements.messageCount.textContent = `${messageCount}/12`;
-            if (messageCount >= 12) {
+            elements.messageCount.textContent = `${messageCount}/7`;
+            elements.mobileMessageCount.textContent = `${messageCount}/7`;
+            if (messageCount >= 7) {
                 showWarningBanner();
                 elements.sendBtn.disabled = true;
                 elements.messageInput.disabled = true;
@@ -278,7 +447,7 @@
         // Message handling with conversational context
         async function sendMessage() {
             const message = elements.messageInput.value.trim();
-            if (!message || messageCount >= 12) return;
+            if (!message || messageCount >= 7) return;
 
             // Disable input
             elements.messageInput.disabled = true;
@@ -290,22 +459,56 @@
             messageCount++;
             updateMessageCount();
 
-            // Add to conversation history with proper context
+            // Add to conversation history
             conversationHistory.push({ role: 'user', content: message });
+
+            // Handle chess conversation
+            if (isChessConversation) {
+                await handleChessMessage(message);
+            } else {
+                await handleRegularMessage();
+            }
+
+            // Re-enable input if under limit
+            if (messageCount < 7) {
+                elements.messageInput.disabled = false;
+                elements.sendBtn.disabled = false;
+                elements.messageInput.focus();
+            }
+            autoResize();
+        }
+
+        async function handleChessMessage(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Check if user wants to play chess
+            if (lowerMessage.includes('yes') || lowerMessage.includes('play') || lowerMessage.includes('start') || lowerMessage.includes('game')) {
+                showTypingIndicator();
+                await new Promise(r => setTimeout(r, 1000));
+                hideTypingIndicator();
+                
+                const chessHTML = createChessBoard();
+                addMessage("Excellent! Let's start our chess match. You're playing as white, so you make the first move. Click and drag the pieces or click to select and then click the destination square. Good luck!", 'assistant', chessHTML);
+                
+                // Add to conversation history
+                conversationHistory.push({ role: 'assistant', content: "Let's play chess! You're white, make your move." });
+                saveChatToHistory();
+                return;
+            }
 
             // Show typing indicator
             showTypingIndicator();
 
             try {
-                // Prepare messages with system prompt for context
+                // Prepare chess-specific system prompt
                 const systemPrompt = {
                     role: "system",
-                    content: "You are AiVA, a helpful AI assistant. Maintain conversational context and provide detailed, helpful responses. Remember previous messages in this conversation."
+                    content: `You are Chess Master, an enthusiastic chess AI. You love chess and are always encouraging players. You can discuss chess strategies, famous games, and provide tips. You often ask if users want to play chess games with you. When users seem interested in chess, encourage them to play a match. Be friendly and supportive about chess gameplay.`
                 };
 
                 const messagesToSend = [systemPrompt, ...conversationHistory];
 
-                // Send to AI with full conversation context
+                // Send to AI
                 const response = await fetch(`${SERVER_BASE}/api/query`, {
                     method: 'POST',
                     headers: {
@@ -313,9 +516,8 @@
                     },
                     body: JSON.stringify({
                         messages: messagesToSend,
-                        model: document.getElementById('modelSelect')?.value || 'openai/gpt-oss-120b:together',
                         max_tokens: 2048,
-                        temperature: 0.7
+                        temperature: 0.8
                     })
                 });
 
@@ -323,13 +525,8 @@
                 hideTypingIndicator();
 
                 if (data.replyText) {
-                    // Add AI response
                     addMessage(data.replyText, 'assistant');
-                    
-                    // Add to conversation history to maintain context
                     conversationHistory.push({ role: 'assistant', content: data.replyText });
-                    
-                    // Save conversation to Firebase
                     saveChatToHistory();
                 } else {
                     addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
@@ -339,17 +536,59 @@
                 addMessage('Sorry, I cannot connect to the AI service right now. Please check your connection and try again.', 'assistant');
                 console.error('AI query error:', error);
             }
-
-            // Re-enable input if under limit
-            if (messageCount < 12) {
-                elements.messageInput.disabled = false;
-                elements.sendBtn.disabled = false;
-                elements.messageInput.focus();
-            }
-            autoResize();
         }
 
-        function addMessage(content, sender) {
+        async function handleRegularMessage() {
+            // Show typing indicator
+            showTypingIndicator();
+
+            try {
+                // Check if chess plugin is enabled and message is chess-related
+                let systemPrompt = {
+                    role: "system",
+                    content: "You are AiVA, a helpful AI assistant. Maintain conversational context and provide detailed, helpful responses. Remember previous messages in this conversation."
+                };
+
+                if (enabledPlugins.chess) {
+                    const message = conversationHistory[conversationHistory.length - 1].content.toLowerCase();
+                    if (message.includes('chess') || message.includes('game') || message.includes('play')) {
+                        systemPrompt.content += " You have access to a chess plugin. When users show interest in chess, ask them if they'd like to play a chess match with you.";
+                    }
+                }
+
+                const messagesToSend = [systemPrompt, ...conversationHistory];
+
+                // Send to AI
+                const response = await fetch(`${SERVER_BASE}/api/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: messagesToSend,
+                        max_tokens: 2048,
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await response.json();
+                hideTypingIndicator();
+
+                if (data.replyText) {
+                    addMessage(data.replyText, 'assistant');
+                    conversationHistory.push({ role: 'assistant', content: data.replyText });
+                    saveChatToHistory();
+                } else {
+                    addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('Sorry, I cannot connect to the AI service right now. Please check your connection and try again.', 'assistant');
+                console.error('AI query error:', error);
+            }
+        }
+
+        function addMessage(content, sender, htmlContent = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `fade-in ${sender === 'user' ? 'flex justify-end' : 'flex justify-start'}`;
             
@@ -358,7 +597,7 @@
             const alignment = isUser ? 'ml-12' : 'mr-12';
 
             // Process content for code blocks and formatting
-            const processedContent = formatMessage(content);
+            const processedContent = htmlContent || formatMessage(content);
 
             messageDiv.innerHTML = `
                 <div class="${bgColor} ${alignment} p-3 rounded-lg max-w-full">
@@ -376,13 +615,11 @@
         }
 
         function formatMessage(content) {
-            // Simple formatting for code blocks and text styling
             content = content.replace(/`([^`]+)`/g, '<code class="bg-gray-800 px-2 py-1 rounded text-sm">$1</code>');
             content = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             content = content.replace(/\*([^*]+)\*/g, '<em>$1</em>');
             content = content.replace(/\n/g, '<br>');
             
-            // Handle code blocks
             content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
                 return `<div class="code-block"><pre><code>${escapeHtml(code.trim())}</code></pre></div>`;
             });
@@ -435,7 +672,9 @@
                 messages: conversationHistory,
                 timestamp: Date.now(),
                 userId: currentUser.uid,
-                messageCount: messageCount
+                messageCount: messageCount,
+                isChessConversation: isChessConversation || false,
+                chessGameData: chessGameData || null
             };
 
             chatHistoryData[currentChatId] = chatData;
@@ -457,53 +696,90 @@
         }
 
         function updateChatHistoryUI() {
-            const chatHistoryContainer = elements.chatHistory;
-            chatHistoryContainer.innerHTML = '';
-
             const chats = Object.values(chatHistoryData)
                 .filter(chat => !archivedChats[chat.id])
                 .sort((a, b) => b.timestamp - a.timestamp);
 
+            // Update desktop chat history
+            elements.chatHistory.innerHTML = '';
+            // Update mobile chat history  
+            elements.mobileChatHistory.innerHTML = '';
+
             chats.forEach(chat => {
-                const chatItem = document.createElement('div');
-                chatItem.className = `p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors ${
-                    chat.id === currentChatId ? 'bg-gray-700' : 'bg-gray-800'
-                }`;
-                
-                chatItem.innerHTML = `
-                    <div class="font-medium text-sm truncate">${chat.title}</div>
-                    <div class="text-xs text-gray-400 flex justify-between">
-                        <span>${new Date(chat.timestamp).toLocaleDateString()}</span>
-                        <span>${chat.messageCount || 0}/12</span>
-                    </div>
-                `;
+                const chatItem = createChatItem(chat);
+                const mobileChatItem = createChatItem(chat);
                 
                 chatItem.addEventListener('click', () => loadChat(chat));
-                chatHistoryContainer.appendChild(chatItem);
+                mobileChatItem.addEventListener('click', () => {
+                    loadChat(chat);
+                    closeMobileSidebar();
+                });
+                
+                elements.chatHistory.appendChild(chatItem);
+                elements.mobileChatHistory.appendChild(mobileChatItem);
             });
+        }
+
+        function createChatItem(chat) {
+            const chatItem = document.createElement('div');
+            chatItem.className = `p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors ${
+                chat.id === currentChatId ? 'bg-gray-700' : 'bg-gray-800'
+            }`;
+            
+            const isChess = chat.isChessConversation;
+            const icon = isChess ? '♗' : '';
+            const titlePrefix = isChess ? 'Chess: ' : '';
+            
+            chatItem.innerHTML = `
+                <div class="font-medium text-sm truncate flex items-center gap-2">
+                    ${icon ? `<span class="text-lg">${icon}</span>` : ''}
+                    ${titlePrefix}${chat.title}
+                </div>
+                <div class="text-xs text-gray-400 flex justify-between">
+                    <span>${new Date(chat.timestamp).toLocaleDateString()}</span>
+                    <span>${chat.messageCount || 0}/7</span>
+                </div>
+            `;
+            
+            return chatItem;
         }
 
         function loadChat(chat) {
             currentChatId = chat.id;
             conversationHistory = chat.messages || [];
             messageCount = chat.messageCount || conversationHistory.filter(msg => msg.role === 'user').length;
+            isChessConversation = chat.isChessConversation || false;
+            chessGameData = chat.chessGameData || null;
             updateMessageCount();
+            
+            // Set chat appearance
+            if (isChessConversation) {
+                elements.chatTitle.textContent = 'Chess Master';
+                elements.chatAvatar.innerHTML = '♗';
+                elements.chatAvatar.className = 'w-8 h-8 chess-conversation rounded-full flex items-center justify-center text-sm font-bold text-white';
+            } else {
+                elements.chatTitle.textContent = 'AiVA Assistant';
+                elements.chatAvatar.innerHTML = 'AI';
+                elements.chatAvatar.className = 'w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold';
+            }
             
             // Clear messages and rebuild
             elements.messagesContainer.innerHTML = '';
             
-            const userMessages = conversationHistory.filter(msg => msg.role === 'user');
-            const assistantMessages = conversationHistory.filter(msg => msg.role === 'assistant');
-            
             // Rebuild conversation display
-            for (let i = 0; i < Math.max(userMessages.length, assistantMessages.length); i++) {
-                if (userMessages[i]) {
-                    addMessage(userMessages[i].content, 'user');
+            conversationHistory.forEach(msg => {
+                if (msg.role === 'user') {
+                    addMessage(msg.content, 'user');
+                } else if (msg.role === 'assistant') {
+                    // Check if this message should contain chess board
+                    if (isChessConversation && msg.content.includes("Let's play chess")) {
+                        const chessHTML = createChessBoard();
+                        addMessage(msg.content, 'assistant', chessHTML);
+                    } else {
+                        addMessage(msg.content, 'assistant');
+                    }
                 }
-                if (assistantMessages[i]) {
-                    addMessage(assistantMessages[i].content, 'assistant');
-                }
-            }
+            });
             
             updateChatHistoryUI();
         }
@@ -524,11 +800,14 @@
 
         function filterChats() {
             const searchTerm = document.getElementById('searchChats').value.toLowerCase();
-            const chatItems = elements.chatHistory.querySelectorAll('div');
+            const mobileSearchTerm = document.getElementById('mobileSearchChats').value.toLowerCase();
+            const term = searchTerm || mobileSearchTerm;
+            
+            const chatItems = [...elements.chatHistory.querySelectorAll('div'), ...elements.mobileChatHistory.querySelectorAll('div')];
             
             chatItems.forEach(item => {
                 const title = item.querySelector('.font-medium')?.textContent?.toLowerCase() || '';
-                item.style.display = title.includes(searchTerm) ? 'block' : 'none';
+                item.style.display = title.includes(term) ? 'block' : 'none';
             });
         }
 
@@ -591,8 +870,15 @@
                 const chatItem = document.createElement('div');
                 chatItem.className = 'p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors bg-gray-800';
                 
+                const isChess = chat.isChessConversation;
+                const icon = isChess ? '♗' : '';
+                const titlePrefix = isChess ? 'Chess: ' : '';
+                
                 chatItem.innerHTML = `
-                    <div class="font-medium text-sm truncate">${chat.title}</div>
+                    <div class="font-medium text-sm truncate flex items-center gap-2">
+                        ${icon ? `<span class="text-lg">${icon}</span>` : ''}
+                        ${titlePrefix}${chat.title}
+                    </div>
                     <div class="text-xs text-gray-400 flex justify-between">
                         <span>${new Date(chat.timestamp).toLocaleDateString()}</span>
                         <div class="flex gap-2">
@@ -614,7 +900,6 @@
                 updateChatHistoryUI();
                 updateArchivedChatsUI();
                 
-                // Save to Firebase if user is logged in
                 if (currentUser) {
                     database.ref(`chats/${currentUser.uid}/${chatId}`).set(chatHistoryData[chatId]);
                 }
@@ -629,6 +914,102 @@
             }
         }
 
+        // Plugin functions
+        function showPlugins() {
+            elements.pluginsModal.classList.remove('hidden');
+        }
+
+        function hidePlugins() {
+            elements.pluginsModal.classList.add('hidden');
+        }
+
+        function togglePlugin(pluginName) {
+            if (enabledPlugins[pluginName]) {
+                enabledPlugins[pluginName] = false;
+                delete enabledPlugins[pluginName];
+                document.getElementById(`${pluginName}Badge`).textContent = 'Disabled';
+                document.getElementById(`${pluginName}Badge`).className = 'plugin-disabled-badge';
+                document.getElementById(`${pluginName}Plugin`).classList.remove('enabled');
+                document.getElementById(`${pluginName}ToggleText`).textContent = 'Enable Plugin';
+            } else {
+                enabledPlugins[pluginName] = true;
+                document.getElementById(`${pluginName}Badge`).textContent = 'Enabled';
+                document.getElementById(`${pluginName}Badge`).className = 'plugin-enabled-badge';
+                document.getElementById(`${pluginName}Plugin`).classList.add('enabled');
+                document.getElementById(`${pluginName}ToggleText`).textContent = 'Disable Plugin';
+                
+                if (pluginName === 'chess') {
+                    initializeChess();
+                }
+            }
+            
+            saveUserPreferences();
+            updateEnabledPluginsUI();
+        }
+
+        function updateEnabledPluginsUI() {
+            // Update plugin status on load
+            if (enabledPlugins.chess) {
+                document.getElementById('chessBadge').textContent = 'Enabled';
+                document.getElementById('chessBadge').className = 'plugin-enabled-badge';
+                document.getElementById('chessPlugin').classList.add('enabled');
+                document.getElementById('chessToggleText').textContent = 'Disable Plugin';
+            }
+
+            // Update enabled plugins list in sidebar
+            const enabledList = elements.enabledPlugins;
+            const mobileEnabledList = elements.mobileEnabledPlugins;
+            
+            enabledList.innerHTML = '';
+            mobileEnabledList.innerHTML = '';
+            
+            Object.keys(enabledPlugins).forEach(pluginName => {
+                if (enabledPlugins[pluginName]) {
+                    const pluginItem = createEnabledPluginItem(pluginName);
+                    const mobilePluginItem = createEnabledPluginItem(pluginName);
+                    
+                    pluginItem.addEventListener('click', () => {
+                        if (pluginName === 'chess') {
+                            startChessConversation();
+                        }
+                    });
+                    
+                    mobilePluginItem.addEventListener('click', () => {
+                        if (pluginName === 'chess') {
+                            startChessConversation();
+                            closeMobileSidebar();
+                        }
+                    });
+                    
+                    enabledList.appendChild(pluginItem);
+                    mobileEnabledList.appendChild(mobilePluginItem);
+                }
+            });
+        }
+
+        function createEnabledPluginItem(pluginName) {
+            const item = document.createElement('div');
+            item.className = 'enabled-plugin-item';
+            
+            let icon, title;
+            switch(pluginName) {
+                case 'chess':
+                    icon = '♗';
+                    title = 'Chess Master';
+                    break;
+                default:
+                    icon = '🧩';
+                    title = pluginName;
+            }
+            
+            item.innerHTML = `
+                <span class="text-lg">${icon}</span>
+                <span class="text-sm font-medium">${title}</span>
+            `;
+            
+            return item;
+        }
+
         // Settings functions
         function showSettings() {
             elements.settingsModal.classList.remove('hidden');
@@ -638,9 +1019,656 @@
             elements.settingsModal.classList.add('hidden');
         }
 
-        // Make functions global for onclick handlers
+        // Chess Functions (Complete Chess Engine Code)
+        function initializeChess() {
+            if (typeof Chess === 'undefined') {
+                console.warn('Chess library not loaded');
+                return;
+            }
+            resolveAllPieces().then(() => {
+                initStockfish();
+            });
+        }
+
+        // Chess piece resolution code
+        function loadImage(url) { 
+            return new Promise(function(resolve, reject) { 
+                var img = new Image(); 
+                img.onload = function() { resolve(url) }; 
+                img.onerror = function() { reject(url) }; 
+                img.src = url; 
+            }); 
+        }
+
+        async function resolvePiece(key, candidates) {
+            for (var i = 0; i < candidates.length; i++) {
+                try { 
+                    var ok = await loadImage(candidates[i]); 
+                    console.log('Loaded piece', key, '->', candidates[i]); 
+                    return candidates[i]; 
+                } catch(e) {}
+            }
+            console.warn('No image found for', key, candidates);
+            return null;
+        }
+
+        async function resolveAllPieces() {
+            var keys = Object.keys(pieceCandidates);
+            for (var i = 0; i < keys.length; i++) { 
+                pieceImgResolved[keys[i]] = await resolvePiece(keys[i], pieceCandidates[keys[i]]); 
+            }
+            if (!pieceImgResolved['bN']) {
+                if (pieceImgResolved['wN']) pieceImgResolved['bN'] = pieceImgResolved['wN'];
+                else { 
+                    for (var p in pieceImgResolved) 
+                        if (pieceImgResolved[p]) { 
+                            pieceImgResolved['bN'] = pieceImgResolved[p]; 
+                            break; 
+                        } 
+                }
+            }
+            var defaultAny = null; 
+            for (var k in pieceImgResolved) 
+                if (pieceImgResolved[k]) { 
+                    defaultAny = pieceImgResolved[k]; 
+                    break; 
+                }
+            for (var k2 in pieceImgResolved) 
+                if (!pieceImgResolved[k2]) 
+                    pieceImgResolved[k2] = defaultAny;
+            console.log('Resolved pieces:', pieceImgResolved);
+            return pieceImgResolved;
+        }
+
+        // Chess engine functions
+        function computeEngineOptions() {
+            var hwc = navigator.hardwareConcurrency || 2;
+            var isMobile = /Mobi|Android/i.test(navigator.userAgent) || (window.innerWidth && window.innerWidth < 720);
+            var threads = isMobile ? 1 : Math.min(4, Math.max(1, Math.floor(hwc)));
+            var hash = isMobile ? 16 : 64;
+            var movetime = isMobile ? 350 : (hwc >= 8 ? 1200 : 800);
+            var skill = 20;
+            engineOpts = { threads: threads, hash: hash, movetime: movetime, skill: skill, isMobile: isMobile, hwc: hwc };
+            stockfishMovetime = movetime;
+            return engineOpts;
+        }
+
+        function createStockfishBlobWorker(cdnUrl) {
+            try {
+                var blobCode = "importScripts('" + cdnUrl + "');";
+                var blob = new Blob([blobCode], { type: 'application/javascript' });
+                var blobURL = URL.createObjectURL(blob);
+                var w = new Worker(blobURL);
+                setTimeout(function() { URL.revokeObjectURL(blobURL); }, 5000);
+                return w;
+            } catch (e) {
+                console.error('createStockfishBlobWorker failed', e);
+                return null;
+            }
+        }
+
+        function textFromEvent(ev) {
+            var d = (ev && ev.data !== undefined) ? ev.data : ev;
+            if (typeof d === 'string') return d;
+            try { return '' + d; } catch (e) { return String(d); }
+        }
+
+        function initStockfish() {
+            var opts = computeEngineOptions();
+            console.log('Engine options:', opts);
+
+            try {
+                if (typeof STOCKFISH === 'function') {
+                    stockfishEngine = STOCKFISH();
+                } else {
+                    var cdn = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
+                    stockfishEngine = createStockfishBlobWorker(cdn);
+                }
+            } catch (e) {
+                console.warn('Stockfish init attempt failed:', e);
+                stockfishEngine = null;
+            }
+
+            if (!stockfishEngine) {
+                engineReady = false;
+                console.warn('Stockfish not available; using minimax fallback.');
+                return;
+            }
+
+            engineDefaultHandler = function(ev) {
+                var line = textFromEvent(ev).trim();
+                if (!line) return;
+                console.log('stockfish:', line);
+                if (line.indexOf('readyok') !== -1) {
+                    engineReady = true;
+                }
+            };
+
+            try {
+                stockfishEngine.onmessage = engineDefaultHandler;
+                stockfishEngine.postMessage('uci');
+                stockfishEngine.postMessage('setoption name Threads value ' + (engineOpts.threads || computeEngineOptions().threads));
+                stockfishEngine.postMessage('setoption name Hash value ' + (engineOpts.hash || computeEngineOptions().hash));
+                stockfishEngine.postMessage('setoption name Skill Level value ' + (engineOpts.skill || computeEngineOptions().skill));
+                stockfishEngine.postMessage('setoption name UCI_LimitStrength value false');
+                stockfishEngine.postMessage('isready');
+            } catch (e) {
+                console.error('Error configuring stockfish:', e);
+            }
+        }
+
+        function stockfishBestMove(fen, movetimeMs) {
+            return new Promise(function(resolve, reject) {
+                if (!stockfishEngine || !engineReady) return reject('engine not ready');
+                if (engineBusy) return reject('engine busy');
+                engineBusy = true;
+
+                var prevHandler = stockfishEngine.onmessage;
+                var timeoutId = null;
+
+                var capture = function(ev) {
+                    var line = textFromEvent(ev).trim();
+                    if (!line) return;
+                    if (line.indexOf('bestmove') === 0) {
+                        try {
+                            var parts = line.split(/\s+/);
+                            var best = parts[1];
+                            try { stockfishEngine.onmessage = prevHandler; } catch (e) { }
+                            if (timeoutId) clearTimeout(timeoutId);
+                            engineBusy = false;
+                            resolve(best);
+                        } catch (err) {
+                            try { stockfishEngine.onmessage = prevHandler; } catch (e) { }
+                            if (timeoutId) clearTimeout(timeoutId);
+                            engineBusy = false;
+                            reject(err);
+                        }
+                    }
+                };
+
+                try {
+                    stockfishEngine.onmessage = capture;
+                    stockfishEngine.postMessage('position fen ' + fen);
+                    stockfishEngine.postMessage('go movetime ' + parseInt(movetimeMs, 10));
+                } catch (e) {
+                    try { stockfishEngine.onmessage = prevHandler; } catch (ignore) { }
+                    engineBusy = false;
+                    return reject(e);
+                }
+
+                timeoutId = setTimeout(function() {
+                    try { stockfishEngine.onmessage = prevHandler; } catch (e) { }
+                    engineBusy = false;
+                    reject('timeout');
+                }, Math.max(8000, movetimeMs + 4000));
+            });
+        }
+
+        // Minimax evaluation functions
+        function evaluateBoard(game, move, prevSum, color) {
+            if (game.in_checkmate()) { 
+                if (move.color === color) return 1e10; 
+                else return -1e10; 
+            }
+            if (game.in_draw() || game.in_threefold_repetition() || game.in_stalemate()) return 0;
+            if (game.in_check()) { 
+                if (move.color === color) prevSum += 50; 
+                else prevSum -= 50; 
+            }
+            var from = [8 - parseInt(move.from[1]), move.from.charCodeAt(0) - 'a'.charCodeAt(0)];
+            var to = [8 - parseInt(move.to[1]), move.to.charCodeAt(0) - 'a'.charCodeAt(0)];
+            if (prevSum < -1500 && move.piece === 'k') move.piece = 'k_e';
+            if ('captured' in move) {
+                if (move.color === color) prevSum += weights[move.captured] + pstOpponent[move.color][move.captured][to[0]][to[1]];
+                else prevSum -= weights[move.captured] + pstSelf[move.color][move.captured][to[0]][to[1]];
+            }
+            if (move.flags && move.flags.includes('p')) {
+                move.promotion = 'q';
+                if (move.color === color) {
+                    prevSum -= weights[move.piece] + pstSelf[move.color][move.piece][from[0]][from[1]];
+                    prevSum += weights[move.promotion] + pstSelf[move.color][move.promotion][to[0]][to[1]];
+                } else {
+                    prevSum += weights[move.piece] + pstSelf[move.color][move.piece][from[0]][from[1]];
+                    prevSum -= weights[move.promotion] + pstSelf[move.color][move.promotion][to[0]][to[1]];
+                }
+            } else {
+                if (move.color !== color) {
+                    prevSum += pstSelf[move.color][move.piece][from[0]][from[1]];
+                    prevSum -= pstSelf[move.color][move.piece][to[0]][to[1]];
+                } else {
+                    prevSum -= pstSelf[move.color][move.piece][from[0]][from[1]];
+                    prevSum += pstSelf[move.color][move.piece][to[0]][to[1]];
+                }
+            }
+            return prevSum;
+        }
+
+        function minimax(game, depth, alpha, beta, isMax, sum, color) {
+            var children = game.ugly_moves({ verbose: true });
+            children.sort(function() { return 0.5 - Math.random(); });
+            if (depth === 0 || children.length === 0) return [null, sum];
+            var maxV = Number.NEGATIVE_INFINITY, minV = Number.POSITIVE_INFINITY, best = null;
+            for (var i = 0; i < children.length; i++) {
+                var m = children[i];
+                var pm = game.ugly_move(m);
+                var newSum = evaluateBoard(game, pm, sum, color);
+                var [, childVal] = minimax(game, depth - 1, alpha, beta, !isMax, newSum, color);
+                game.undo();
+                if (isMax) {
+                    if (childVal > maxV) { maxV = childVal; best = pm; }
+                    if (childVal > alpha) alpha = childVal;
+                } else {
+                    if (childVal < minV) { minV = childVal; best = pm; }
+                    if (childVal < beta) beta = childVal;
+                }
+                if (alpha >= beta) break;
+            }
+            return isMax ? [best, maxV] : [best, minV];
+        }
+
+        function getBestMoveMinimax(game, color, currSum) {
+            var depth = 2;
+            return minimax(game, depth, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, currSum, color)[0];
+        }
+
+        // Chess board creation and management
+        function createChessBoard() {
+            const boardId = 'chessBoard_' + Date.now();
+            const pgnId = 'pgnMoves_' + Date.now();
+            
+            // Initialize new chess game
+            chessGame = new Chess();
+            globalSum = 0;
+            pgn_moves = [];
+            inputLocked = false;
+            processingMove = false;
+            selectedSquare = null;
+            legalTargets = [];
+
+            const chessHTML = `
+                <div class="chess-container">
+                    <div id="${boardId}" class="chess-board"></div>
+                    <div class="pgn-table">
+                        <h4 class="font-semibold mb-2">Game Moves</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>White</th>
+                                    <th>Black</th>
+                                </tr>
+                            </thead>
+                            <tbody id="${pgnId}">
+                                <tr><td colspan="3" class="text-center text-gray-400">Game will start soon...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            // Initialize board after DOM update
+            setTimeout(() => {
+                initChessBoard(boardId, pgnId);
+            }, 100);
+
+            return chessHTML;
+        }
+
+        function initChessBoard(boardId, pgnId) {
+            function pieceTheme(piece) {
+                if (pieceImgResolved && pieceImgResolved[piece]) return pieceImgResolved[piece];
+                return 'pieces/wP.svg'; // fallback
+            }
+
+            var config = {
+                draggable: true,
+                position: 'start',
+                pieceTheme: pieceTheme,
+                moveSpeed: 250,
+                snapbackSpeed: 200,
+                snapSpeed: 100,
+                onDragStart: function(source, piece) {
+                    if (inputLocked) return false;
+                    try {
+                        if (chessGame.game_over()) return false;
+                        if (!piece) return false;
+                        if ((chessGame.turn() === 'w' && piece.search(/^b/) !== -1) || 
+                            (chessGame.turn() === 'b' && piece.search(/^w/) !== -1)) return false;
+                    } catch (e) {
+                        console.warn('onDragStart guard triggered', e);
+                        return false;
+                    }
+                },
+                onDrop: function(source, target) {
+                    if (inputLocked) return 'snapback';
+                    var move = chessGame.move({ from: source, to: target, promotion: 'q' });
+                    if (move === null) { 
+                        playChessSound('incorrect'); 
+                        return 'snapback'; 
+                    }
+                    inputLocked = true;
+                    doMoveLogic(move, source, target, true, boardId, pgnId);
+                    return;
+                },
+                onSnapEnd: function() { 
+                    chessBoard.position(chessGame.fen()); 
+                }
+            };
+
+            chessBoard = Chessboard(boardId, config);
+            
+            setTimeout(function() { 
+                $(`#${boardId} .chessboard-js-piece`).css('transition', 'top 0.25s, left 0.25s'); 
+            }, 1000);
+
+            // Add click handlers
+            setupChessClickHandlers(boardId, pgnId);
+        }
+
+        function setupChessClickHandlers(boardId, pgnId) {
+            $(`#${boardId}`).on('click', '.square-55d63', function() {
+                if (inputLocked) return;
+                var square = $(this).attr('data-square');
+                if (chessGame.game_over()) return;
+                if (!selectedSquare) {
+                    var piece = chessGame.get(square);
+                    if (!piece || piece.color !== chessGame.turn()) return;
+                    selectedSquare = square;
+                    clearChessHighlights(boardId);
+                    $(`#${boardId} .square-` + square).addClass('highlight-click');
+                    var moves = chessGame.moves({ square: square, verbose: true });
+                    legalTargets = moves.map(function(m) { return m.to; });
+                    highlightChessSquares(legalTargets, 'highlight-target', boardId);
+                } else {
+                    if (square === selectedSquare) { 
+                        selectedSquare = null; 
+                        legalTargets = []; 
+                        clearChessHighlights(boardId); 
+                        return; 
+                    }
+                    if (legalTargets.includes(square)) {
+                        var move = chessGame.move({ from: selectedSquare, to: square, promotion: 'q' });
+                        if (move === null) { 
+                            playChessSound('incorrect'); 
+                            clearChessHighlights(boardId); 
+                            selectedSquare = null; 
+                            legalTargets = []; 
+                            chessBoard.position(chessGame.fen()); 
+                            return; 
+                        }
+                        inputLocked = true;
+                        doMoveLogic(move, selectedSquare, square, false, boardId, pgnId);
+                        return;
+                    }
+                    var piece2 = chessGame.get(square);
+                    if (piece2 && piece2.color === chessGame.turn()) {
+                        selectedSquare = square;
+                        clearChessHighlights(boardId);
+                        $(`#${boardId} .square-` + square).addClass('highlight-click');
+                        var moves = chessGame.moves({ square: square, verbose: true });
+                        legalTargets = moves.map(function(m) { return m.to; });
+                        highlightChessSquares(legalTargets, 'highlight-target', boardId);
+                        return;
+                    }
+                    selectedSquare = null; 
+                    legalTargets = []; 
+                    clearChessHighlights(boardId);
+                }
+            });
+
+            $(document).on('click', function(e) { 
+                if ($(e.target).closest(`#${boardId}`).length === 0) { 
+                    clearChessHighlights(boardId); 
+                    selectedSquare = null; 
+                    legalTargets = []; 
+                } 
+            });
+
+            $(`#${boardId}`).on('mousedown', '.square-55d63', function() { 
+                clearChessHighlights(boardId); 
+                selectedSquare = null; 
+                legalTargets = []; 
+            });
+        }
+
+        async function doMoveLogic(move, source, target, isDrag, boardId, pgnId) {
+            if (processingMove) { 
+                console.warn('doMoveLogic re-entry blocked'); 
+                return; 
+            }
+            processingMove = true;
+            try {
+                playChessMoveEffectAndSound(move);
+                boardChessMoveEffect(source, boardId);
+                boardChessMoveEffect(target, boardId);
+                globalSum = evaluateBoard(chessGame, move, globalSum, 'b');
+
+                if (!isDrag) chessBoard.position(chessGame.fen());
+
+                clearChessHighlights(boardId);
+                selectedSquare = null;
+
+                // Update PGN table
+                updatePGNTable(move, pgnId);
+
+                await new Promise(r => setTimeout(r, 300));
+
+                if (chessGame.game_over() || chessGame.turn() !== 'b') {
+                    inputLocked = false;
+                    processingMove = false;
+                    
+                    if (chessGame.game_over()) {
+                        handleGameEnd(pgnId);
+                    }
+                    return;
+                }
+
+                // AI move
+                if (aiMode === 'stockfish' && stockfishEngine && engineReady) {
+                    try {
+                        var fen = chessGame.fen();
+                        console.log('Requesting SF bestmove for fen:', fen);
+                        var best = await stockfishBestMove(fen, stockfishMovetime).catch(function(e) { 
+                            console.warn('SF query failed:', e); 
+                            return null; 
+                        });
+                        console.log('Stockfish answered bestmove:', best);
+
+                        if (best && best !== '(none)') {
+                            var from = best.slice(0, 2);
+                            var to = best.slice(2, 4);
+                            var promotion = (best.length > 4) ? best[4] : null;
+
+                            var legals = chessGame.moves({ verbose: true });
+                            var matched = null;
+                            for (var i = 0; i < legals.length; i++) {
+                                var m = legals[i];
+                                if (m.from === from && m.to === to) {
+                                    if (promotion) {
+                                        if (m.promotion && m.promotion === promotion.toLowerCase()) { 
+                                            matched = m; 
+                                            break; 
+                                        }
+                                    } else { 
+                                        matched = m; 
+                                        break; 
+                                    }
+                                }
+                            }
+
+                            if (matched) {
+                                console.log('Applying SF move (validated):', matched);
+                                var botMove = chessGame.move({ 
+                                    from: matched.from, 
+                                    to: matched.to, 
+                                    promotion: matched.promotion || 'q' 
+                                });
+                                if (botMove) {
+                                    playChessMoveEffectAndSound(botMove);
+                                    boardChessMoveEffect(botMove.from, boardId);
+                                    boardChessMoveEffect(botMove.to, boardId);
+                                    globalSum = evaluateBoard(chessGame, botMove, globalSum, 'b');
+                                    chessBoard.position(chessGame.fen());
+                                    updatePGNTable(botMove, pgnId);
+                                    inputLocked = false;
+                                    processingMove = false;
+                                    
+                                    if (chessGame.game_over()) {
+                                        handleGameEnd(pgnId);
+                                    }
+                                    return;
+                                } else {
+                                    console.warn('game.move returned null despite matched legal move:', matched);
+                                }
+                            } else {
+                                console.warn('Stockfish suggested move not found in legal moves:', best);
+                            }
+                        } else {
+                            console.warn('Stockfish returned no usable bestmove:', best);
+                        }
+                    } catch (e) {
+                        console.warn('Stockfish error during move apply -> fallback to minimax', e);
+                    }
+                }
+
+                // Fallback minimax
+                if (!chessGame.game_over() && chessGame.turn() === 'b') {
+                    var botMove = getBestMoveMinimax(chessGame, 'b', globalSum);
+                    if (botMove) {
+                        chessGame.move(botMove);
+                        playChessMoveEffectAndSound(botMove);
+                        boardChessMoveEffect(botMove.from, boardId);
+                        boardChessMoveEffect(botMove.to, boardId);
+                        globalSum = evaluateBoard(chessGame, botMove, globalSum, 'b');
+                        chessBoard.position(chessGame.fen());
+                        updatePGNTable(botMove, pgnId);
+                        
+                        if (chessGame.game_over()) {
+                            handleGameEnd(pgnId);
+                        }
+                    } else {
+                        console.warn('Minimax did not return move — position may be terminal.');
+                    }
+                }
+
+                inputLocked = false;
+            } finally {
+                processingMove = false;
+            }
+        }
+
+        function updatePGNTable(move, pgnId) {
+            pgn_moves.push(move);
+            const pgnBody = document.getElementById(pgnId);
+            if (!pgnBody) return;
+
+            // Clear existing content
+            pgnBody.innerHTML = '';
+
+            // Group moves in pairs (white, black)
+            for (let i = 0; i < pgn_moves.length; i += 2) {
+                const moveNumber = Math.floor(i / 2) + 1;
+                const whiteMove = pgn_moves[i];
+                const blackMove = pgn_moves[i + 1];
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="text-center">${moveNumber}</td>
+                    <td>${whiteMove ? whiteMove.san : ''}</td>
+                    <td>${blackMove ? blackMove.san : ''}</td>
+                `;
+                pgnBody.appendChild(row);
+            }
+        }
+
+        function handleGameEnd(pgnId) {
+            setTimeout(() => {
+                let gameResult = '';
+                let analysis = '';
+                
+                if (chessGame.in_checkmate()) {
+                    const winner = chessGame.turn() === 'w' ? 'Black' : 'White';
+                    gameResult = `Game Over - ${winner} wins by checkmate!`;
+                    
+                    if (winner === 'White') {
+                        analysis = "Congratulations! You played brilliantly and achieved checkmate. That was a fantastic game! Your strategic thinking really showed in those final moves. I was impressed by your tactical awareness.";
+                    } else {
+                        analysis = "Great game! Even though I managed to get checkmate this time, you played very well and put up strong resistance. I particularly liked some of your middle game moves - they really made me think carefully about my strategy.";
+                    }
+                } else if (chessGame.in_stalemate()) {
+                    gameResult = 'Game Over - Stalemate! It\'s a draw.';
+                    analysis = "What an interesting game that ended in stalemate! That's actually quite a sophisticated outcome. You managed the endgame well to achieve this draw. Stalemate can be a great defensive resource!";
+                } else if (chessGame.in_draw()) {
+                    gameResult = 'Game Over - Draw!';
+                    analysis = "A well-fought draw! Both sides played solidly. These kinds of balanced games really show good positional understanding from both players. Well done!";
+                }
+
+                // Add result to PGN table
+                const pgnBody = document.getElementById(pgnId);
+                if (pgnBody) {
+                    const resultRow = document.createElement('tr');
+                    resultRow.innerHTML = `<td colspan="3" class="text-center font-bold text-green-400">${gameResult}</td>`;
+                    pgnBody.appendChild(resultRow);
+                }
+
+                // Send analysis message
+                setTimeout(() => {
+                    addMessage(analysis, 'assistant');
+                    conversationHistory.push({ role: 'assistant', content: analysis });
+                    saveChatToHistory();
+                }, 1500);
+            }, 1000);
+        }
+
+        // Chess sound and effects
+        function playChessSound(type) {
+            const sounds = {
+                'move': document.getElementById('moveSound'),
+                'capture': document.getElementById('captureSound'),
+                'promote': document.getElementById('promoteSound'),
+                'castling': document.getElementById('castlingSound'),
+                'incorrect': document.getElementById('incorrectMoveSound'),
+                'check': document.getElementById('checkSound'),
+                'checkmate': document.getElementById('checkmateSound')
+            };
+            
+            if (sounds[type]) { 
+                sounds[type].currentTime = 0; 
+                sounds[type].play().catch(() => {}); 
+            }
+        }
+
+        function boardChessMoveEffect(square, boardId) {
+            const $sq = $(`#${boardId} .square-` + square);
+            $sq.addClass('move-effect');
+            setTimeout(function() { $sq.removeClass('move-effect'); }, 400);
+        }
+
+        function playChessMoveEffectAndSound(move) {
+            if (move.flags.includes('k') || move.flags.includes('q')) playChessSound('castling');
+            else if (move.flags.includes('p')) playChessSound('promote');
+            else if (move.flags.includes('c') || move.flags.includes('e')) playChessSound('capture');
+            else playChessSound('move');
+            
+            if (chessGame.in_checkmate()) playChessSound('checkmate');
+            else if (chessGame.in_check()) playChessSound('check');
+        }
+
+        function clearChessHighlights(boardId) { 
+            $(`#${boardId} .square-55d63`).removeClass('highlight-click highlight-target'); 
+        }
+
+        function highlightChessSquares(squares, cls, boardId) { 
+            squares.forEach(function(sq) { 
+                $(`#${boardId} .square-` + sq).addClass(cls); 
+            }); 
+        }
+
+        // Global functions for onclick handlers
         window.unarchiveChat = unarchiveChat;
         window.deleteArchivedChat = deleteArchivedChat;
+        window.togglePlugin = togglePlugin;
 
         // Initialize app when DOM is loaded
         document.addEventListener('DOMContentLoaded', initApp);
+
