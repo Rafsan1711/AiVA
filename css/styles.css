@@ -77,6 +77,86 @@ body {
     overflow-x: auto;
 }
 
+/* Code Block Container for Code Improver Plugin */
+.code-block-container {
+    background: #2d3748 !important;
+    border-radius: 0 0 8px 8px;
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.code-block-container pre {
+    margin: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.code-block-container code {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+}
+
+/* Debug Animation Styles */
+.debug-line {
+    padding: 2px 4px;
+    transition: background-color 0.2s ease;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    line-height: 1.4;
+}
+
+.debug-line:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Source File Item Styles */
+.source-file-item {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.source-file-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Code Improver Plugin Specific Styles */
+.code-improver-conversation {
+    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+}
+
+/* Feature Input Section */
+.feature-section {
+    border-top: 1px solid #4b5563;
+    padding-top: 16px;
+}
+
+/* File Editor Styles */
+#fileEditor {
+    border-top: 1px solid #4b5563;
+    padding-top: 16px;
+    margin-top: 16px;
+}
+
+#fileNameInput, #fileCodeInput, #featureInput {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#fileNameInput:focus, #fileCodeInput:focus, #featureInput:focus {
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
+/* Code Card Header */
+.code-card-header {
+    background: #374151;
+    padding: 8px 12px;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #4b5563;
+}
+
 /* Scrollbar Styles */
 .sidebar-scroll::-webkit-scrollbar {
     width: 6px;
@@ -178,14 +258,14 @@ body {
 
 /* Chess Board Styles */
 .chess-container {
-    max-width: 400px;
+    max-width: 500px;
     margin: 16px auto;
     text-align: center;
 }
 
 .chess-board {
     width: 100%;
-    min-width: 280px;
+    min-width: 400px;
     margin: 0 auto 16px;
 }
 
@@ -298,6 +378,169 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* Prism.js Custom Theme Override */
+pre[class*="language-"] {
+    background: #2d3748 !important;
+    margin: 0;
+    padding: 16px;
+    border-radius: 0;
+    overflow: auto;
+}
+
+code[class*="language-"] {
+    background: transparent !important;
+    color: #e2e8f0 !important;
+    text-shadow: none;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
+
+/* Token Colors for Code Highlighting */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+    color: #6b7280 !important;
+}
+
+.token.punctuation {
+    color: #e2e8f0 !important;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+    color: #f87171 !important;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+    color: #34d399 !important;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+    color: #fbbf24 !important;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+    color: #a78bfa !important;
+}
+
+.token.function,
+.token.class-name {
+    color: #60a5fa !important;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+    color: #fb7185 !important;
+}
+
+/* Line Numbers for Code */
+.line-numbers .line-numbers-rows {
+    border-right: 1px solid #4b5563 !important;
+    background: #374151 !important;
+}
+
+.line-numbers-rows > span:before {
+    color: #6b7280 !important;
+}
+
+/* Copy Code Button Hover Effect */
+.code-card-header button:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+/* Feature Generation Button Animation */
+#generateFeatureBtn {
+    position: relative;
+    overflow: hidden;
+}
+
+#generateFeatureBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+#generateFeatureBtn:hover::before {
+    left: 100%;
+}
+
+/* Status Indicators */
+.status-online {
+    color: #10b981;
+}
+
+.status-offline {
+    color: #ef4444;
+}
+
+/* Loading Spinner for Code Generation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+    border: 2px solid #374151;
+    border-top: 2px solid #8b5cf6;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* File Icons Animation */
+.source-file-item .text-blue-300 {
+    transition: transform 0.2s ease;
+}
+
+.source-file-item:hover .text-blue-300 {
+    transform: scale(1.2);
+}
+
+/* Button Pulse Effect for Important Actions */
+.btn-pulse {
+    animation: btnPulse 2s infinite;
+}
+
+@keyframes btnPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    }
+}
+
 /* Media Queries */
 @media (max-width: 768px) {
     .desktop-sidebar {
@@ -311,6 +554,33 @@ body {
     }
     .chat-area {
         width: 100%;
+    }
+    
+    /* Chess board mobile adjustments */
+    .chess-container {
+        max-width: 100%;
+        padding: 0 10px;
+    }
+    
+    .chess-board {
+        min-width: 300px;
+    }
+    
+    /* Code blocks mobile responsive */
+    .code-block-container {
+        max-height: 300px;
+        font-size: 11px;
+    }
+    
+    /* Source file items stack vertically on mobile */
+    .source-file-item {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .source-file-item .flex {
+        justify-content: center;
     }
 }
 
@@ -327,4 +597,34 @@ body {
     .chat-area {
         width: calc(100% - 320px);
     }
+}
+
+/* Dark scrollbar for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Custom selection color */
+::selection {
+    background: rgba(139, 92, 246, 0.3);
+    color: inherit;
+}
+
+::-moz-selection {
+    background: rgba(139, 92, 246, 0.3);
+    color: inherit;
 }
