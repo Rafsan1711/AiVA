@@ -70,5 +70,28 @@ const AI_MODES = {
     MINIMAX: 'minimax'
 };
 
+// Plugin types
+const PLUGIN_TYPES = {
+    CHESS: 'chess',
+    CODE_IMPROVER: 'codeImprover'
+};
+
+// Conversation types
+const CONVERSATION_TYPES = {
+    REGULAR: 'regular',
+    CHESS: 'chess', 
+    CODE_IMPROVER: 'codeImprover'
+};
+
 // Message limits
 const MAX_MESSAGES_PER_CHAT = 7;
+
+// Code Improver workflow stages
+const CODE_IMPROVER_STAGES = {
+    IDLE: 'idle',
+    FEATURE_INPUT: 'feature_input',
+    FEATURE_CONFIRM: 'feature_confirm',
+    CODING: 'coding',
+    DEBUGGING: 'debugging',
+    COMPLETE: 'complete'
+};
