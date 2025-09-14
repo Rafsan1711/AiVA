@@ -241,4 +241,90 @@ body {
 }
 
 /* Plugin Cards */
-.plugin-car
+.plugin-card {
+    background: #374151;
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.plugin-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+}
+
+.plugin-card.enabled {
+    border-color: #10b981;
+    background: #065f46;
+}
+
+.plugin-enabled-badge {
+    background: #10b981;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.plugin-disabled-badge {
+    background: #6b7280;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.enabled-plugin-item {
+    background: #374151;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.enabled-plugin-item:hover {
+    background: #4b5563;
+}
+
+.chess-conversation {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .desktop-sidebar {
+        display: none;
+    }
+    .mobile-header {
+        display: flex;
+    }
+    .mobile-overlay.active {
+        display: block;
+    }
+    .chat-area {
+        width: 100%;
+    }
+}
+
+@media (min-width: 769px) {
+    .desktop-sidebar {
+        display: flex;
+    }
+    .mobile-header {
+        display: none;
+    }
+    .mobile-overlay {
+        display: none !important;
+    }
+    .chat-area {
+        width: calc(100% - 320px);
+    }
+}
