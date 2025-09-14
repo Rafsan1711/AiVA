@@ -134,6 +134,51 @@
                         <span id="chessToggleText">Enable Plugin</span>
                     </button>
                 </div>
+                
+                <!-- Code Improver Plugin Card -->
+                <div class="plugin-card" id="codeImproverPlugin" data-plugin="codeImprover">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-2xl">💻</div>
+                            <div>
+                                <h3 class="text-lg font-semibold">Code Improver</h3>
+                                <p class="text-sm text-gray-400">AI-powered code enhancement and debugging</p>
+                            </div>
+                        </div>
+                        <div class="plugin-disabled-badge" id="codeImproverBadge">Disabled</div>
+                    </div>
+                    <p class="text-sm text-gray-300 mb-4">Enhance your source code with AI assistance. Features code generation, debugging, feature implementation, and intelligent code analysis with Firebase integration.</p>
+                    <button class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-medium transition-colors" onclick="togglePlugin('codeImprover')">
+                        <span id="codeImproverToggleText">Enable Plugin</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal for Code Improver -->
+    <div id="codeImproverDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white">⚠️</div>
+                <h2 class="text-xl font-semibold">Delete Code Improver Chat</h2>
+            </div>
+            <div class="mb-6">
+                <p class="text-gray-300 mb-4">Deleting this chat will permanently remove:</p>
+                <ul class="list-disc list-inside text-sm text-gray-400 space-y-1">
+                    <li>All conversation history</li>
+                    <li>All source code files</li>
+                    <li>Generated code implementations</li>
+                    <li>Debugging analysis history</li>
+                </ul>
+                <div class="mt-4 flex items-center gap-2">
+                    <input type="checkbox" id="confirmDelete" class="rounded bg-gray-700 border-gray-600">
+                    <label for="confirmDelete" class="text-sm text-gray-300">I understand this action cannot be undone</label>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button id="confirmDeleteBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-medium disabled:opacity-50" disabled>Delete Everything</button>
+                <button id="cancelDeleteBtn" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded font-medium">Cancel</button>
             </div>
         </div>
     </div>
@@ -360,6 +405,7 @@
     <script src="js/messages.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/plugins/chess-plugin.js"></script>
+    <script src="js/plugins/code-improver-plugin.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
