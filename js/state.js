@@ -22,6 +22,10 @@ const AppState = {
     isChessConversation: false,
     chessGameData: null,
     
+    // Code Improver specific state
+    isCodeImproverConversation: false,
+    codeImproverData: null,
+    
     // Initialize state
     init: function() {
         this.loadFromStorage();
@@ -64,6 +68,8 @@ const AppState = {
         this.messageCount = 0;
         this.isChessConversation = false;
         this.chessGameData = null;
+        this.isCodeImproverConversation = false;
+        this.codeImproverData = null;
     },
     
     // Reset all state
@@ -112,6 +118,77 @@ const ChessState = {
         this.selectedSquare = null;
         this.legalTargets = [];
         this.pgn_moves = [];
+    }
+};
+
+// Code Improver State
+const CodeImproverState = {
+    // Plugin active status
+    isActive: false,
+    
+    // Source files management
+    sourceFiles: {},
+    
+    // Current workflow state
+    currentWorkflow: {
+        stage: CODE_IMPROVER_STAGES.IDLE,
+        featureDescription: '',
+        currentFile: null,
+        currentGeneratedCode: '',
+        allFiles: [],
+        fileIndex: 0,
+        debugCount: 0
+    },
+    
+    // Prism.js loading status
+    prismLoaded: false,
+    
+    // Firebase references
+    firebaseRef: null,
+    
+    // Reset code improver state
+    reset: function() {
+        this.isActive = false;
+        this.sourceFiles = {};
+        this.currentWorkflow = {
+            stage: CODE_IMPROVER_STAGES.IDLE,
+            featureDescription: '',
+            currentFile: null,
+            currentGeneratedCode: '',
+            allFiles: [],
+            fileIndex: 0,
+            debugCount: 0
+        };
+        this.prismLoaded = false;
+        this.firebaseRef = null;
+    },
+    
+    // Initialize Firebase reference
+    initFirebase: function(userId) {
+        if (userId && typeof database !== 'undefined') {
+            this.firebaseRef = database.ref(`codeImprover/${userId}`);
+        }
+    },
+    
+    // Save source files to Firebase
+    saveSourceFiles: function() {
+        if (this.firebaseRef) {
+            this.firebaseRef.child('sourceFiles').set(this.sourceFiles);
+        }
+    },
+    
+    // Load source files from Firebase
+    loadSourceFiles: function() {
+        return new Promise((resolve) => {
+            if (this.firebaseRef) {
+                this.firebaseRef.child('sourceFiles').on('value', (snapshot) => {
+                    this.sourceFiles = snapshot.val() || {};
+                    resolve(this.sourceFiles);
+                });
+            } else {
+                resolve({});
+            }
+        });
     }
 };
 
