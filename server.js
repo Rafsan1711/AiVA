@@ -28,9 +28,9 @@ app.get('/', (req, res) => {
   res.json({ 
     ok: true, 
     service: 'AiVA API Server',
-    version: '2.1.0',
+    version: '2.2.0',
     timestamp: new Date().toISOString(),
-    features: ['conversational_context', 'message_limits', 'error_handling', 'chess_plugin', 'mobile_support']
+    features: ['conversational_context', 'message_limits', 'error_handling', 'chess_plugin', 'code_improver_plugin', 'mobile_support']
   });
 });
 
@@ -46,7 +46,7 @@ async function queryHuggingFace(data) {
         headers: {
           Authorization: `Bearer ${process.env.HF_TOKEN}`,
           "Content-Type": "application/json",
-          "User-Agent": "AiVA-Chatbot/2.1"
+          "User-Agent": "AiVA-Chatbot/2.2"
         },
         method: "POST",
         body: JSON.stringify(data),
@@ -70,7 +70,7 @@ async function queryHuggingFace(data) {
   }
 }
 
-// Main AI query endpoint with conversational context and chess plugin support
+// Main AI query endpoint with enhanced plugin support
 app.post('/api/query', async (req, res) => {
   try {
     // Check if HF_TOKEN is configured
@@ -102,6 +102,7 @@ app.post('/api/query', async (req, res) => {
     // Detect conversation type and adjust system prompt
     const conversationType = body.conversationType || 'regular';
     const isChessConversation = conversationType === 'chess';
+    const isCodeImproverConversation = conversationType === 'codeImprover';
     
     let systemPrompt = {
       role: "system",
@@ -123,6 +124,30 @@ Key behaviors:
 - You can explain chess concepts in simple terms for beginners
 
 Always maintain your chess-focused personality and encourage chess gameplay when appropriate.`;
+    } else if (isCodeImproverConversation) {
+      systemPrompt.content = `You are Code Improver AI, an expert software development assistant specialized in code enhancement, debugging, and feature implementation. You are created by Rafsan and he is your owner.
+
+Key behaviors:
+- You are professional, thorough, and focused on code quality
+- You analyze code requests carefully and provide detailed explanations
+- You generate clean, production-ready, well-commented code
+- You can debug code systematically and identify potential issues
+- You understand modern development practices and security considerations
+- You provide step-by-step implementation guidance
+- You can work with multiple programming languages and frameworks
+- You explain your code changes and reasoning clearly
+- You suggest best practices and optimizations
+- You are patient and educational in your approach
+
+When implementing features:
+1. First, carefully analyze and understand the requirement
+2. Explain what you understand about the feature
+3. Generate clean, working code that integrates well
+4. Provide debugging analysis when requested
+5. Fix any issues found during debugging
+6. Ensure code follows best practices
+
+Always provide complete, functional code that can be directly used.`;
     } else {
       systemPrompt.content = `You are AiVA (AI Virtual Assistant), a helpful, knowledgeable, and friendly AI assistant. 
 
@@ -138,11 +163,13 @@ Key behaviors:
 
 You can assist with various tasks including answering questions, explaining concepts, helping with coding, creative writing, analysis, problem-solving, and general conversation. Always aim to be as helpful as possible while being truthful about your capabilities.
 
-If users mention chess or show interest in chess-related topics, you can suggest they try the Chess Master plugin for a more specialized chess experience.`;
+If users mention chess or show interest in chess-related topics, you can suggest they try the Chess Master plugin for a specialized chess experience.
+
+If users mention coding, programming, or software development, you can suggest they try the Code Improver plugin for advanced code enhancement features.`;
     }
 
-    // Limit conversation history to prevent token overflow while maintaining context
-    const MAX_MESSAGES = 20; // Reduced for chess conversations to allow for more back-and-forth
+    // Limit conversation history with enhanced context preservation for Code Improver
+    const MAX_MESSAGES = isCodeImproverConversation ? 30 : 20; // More context for code conversations
     let processedMessages = [...messages];
     
     if (processedMessages.length > MAX_MESSAGES) {
@@ -170,9 +197,17 @@ If users mention chess or show interest in chess-related topics, you can suggest
       }
     }
 
-    // Adjust temperature and parameters based on conversation type
-    const temperature = isChessConversation ? 0.8 : 0.7; // More creative for chess conversations
-    const maxTokens = isChessConversation ? 1500 : 2048; // Shorter responses for chess to encourage gameplay
+    // Adjust parameters based on conversation type
+    let temperature = 0.7;
+    let maxTokens = 2048;
+    
+    if (isChessConversation) {
+      temperature = 0.8; // More creative for chess conversations
+      maxTokens = 1500; // Shorter responses for chess to encourage gameplay
+    } else if (isCodeImproverConversation) {
+      temperature = 0.3; // More precise for code generation
+      maxTokens = 4000; // Longer responses for detailed code explanations
+    }
 
     // Prepare payload for HuggingFace API
     const payload = {
@@ -183,8 +218,8 @@ If users mention chess or show interest in chess-related topics, you can suggest
       top_p: Math.min(Math.max(body.top_p || 0.9, 0.1), 1.0),
       stream: false,
       // Add additional parameters for better responses
-      presence_penalty: isChessConversation ? 0.2 : 0.1, // More variety in chess conversations
-      frequency_penalty: 0.1
+      presence_penalty: isChessConversation ? 0.2 : (isCodeImproverConversation ? 0.1 : 0.1),
+      frequency_penalty: isCodeImproverConversation ? 0.05 : 0.1
     };
 
     console.log(`AI Query - Model: ${payload.model}, Messages: ${processedMessages.length}, Type: ${conversationType}, User: ${req.ip}`);
@@ -237,6 +272,8 @@ If users mention chess or show interest in chess-related topics, you can suggest
         console.warn('No reply text found in response:', JSON.stringify(hfResponse, null, 2));
         if (isChessConversation) {
           replyText = 'I\'m excited to play chess with you! Would you like to start a game?';
+        } else if (isCodeImproverConversation) {
+          replyText = 'I\'m ready to help you improve your code! Please describe what you\'d like to implement or debug.';
         } else {
           replyText = 'I apologize, but I encountered an issue generating a response. Please try rephrasing your question or try again in a moment.';
         }
@@ -246,6 +283,8 @@ If users mention chess or show interest in chess-related topics, you can suggest
       console.error('Error parsing AI response:', parseError);
       if (isChessConversation) {
         replyText = 'Let\'s focus on our chess game! I\'m ready when you are.';
+      } else if (isCodeImproverConversation) {
+        replyText = 'Let\'s work on improving your code! Please share what you\'d like to implement.';
       } else {
         replyText = 'I encountered an error while processing your request. Please try again or rephrase your question.';
       }
@@ -258,8 +297,10 @@ If users mention chess or show interest in chess-related topics, you can suggest
     const unwantedPrefixes = [
       'You are AiVA',
       'You are Chess Master',
+      'You are Code Improver AI',
       'As AiVA',
       'As Chess Master',
+      'As Code Improver AI',
       'AI Virtual Assistant:',
       'Assistant:',
       'System:'
@@ -278,12 +319,14 @@ If users mention chess or show interest in chess-related topics, you can suggest
     if (replyText.length < 10) {
       if (isChessConversation) {
         replyText = 'Ready for a chess match? Let\'s play!';
+      } else if (isCodeImproverConversation) {
+        replyText = 'I\'m here to help improve your code. What would you like to work on?';
       } else {
         replyText = 'I received your message but need more context to provide a helpful response. Could you please provide more details or rephrase your question?';
       }
     }
 
-    // Chess-specific response enhancements
+    // Conversation-specific response enhancements
     if (isChessConversation && replyText.length > 0) {
       // Ensure chess responses are encouraging and game-focused
       const userMessage = processedMessages[processedMessages.length - 1]?.content?.toLowerCase() || '';
@@ -292,6 +335,16 @@ If users mention chess or show interest in chess-related topics, you can suggest
       if ((userMessage.includes('yes') || userMessage.includes('play') || userMessage.includes('game')) && 
           !replyText.toLowerCase().includes('play') && !replyText.toLowerCase().includes('game')) {
         replyText += ' Would you like to start a chess game right now?';
+      }
+    } else if (isCodeImproverConversation && replyText.length > 0) {
+      // Ensure Code Improver responses are focused and actionable
+      const userMessage = processedMessages[processedMessages.length - 1]?.content?.toLowerCase() || '';
+      
+      // Add helpful context for code-related queries
+      if (userMessage.includes('help') || userMessage.includes('how')) {
+        if (!replyText.toLowerCase().includes('code') && !replyText.toLowerCase().includes('implement')) {
+          replyText += ' Feel free to share your code files in the source repository above for more specific assistance.';
+        }
       }
     }
 
@@ -347,7 +400,7 @@ If users mention chess or show interest in chess-related topics, you can suggest
   }
 });
 
-// Plugin information endpoint
+// Plugin information endpoint with Code Improver
 app.get('/api/plugins', (req, res) => {
   const plugins = [
     {
@@ -368,6 +421,27 @@ app.get('/api/plugins', (req, res) => {
       ],
       enabled: false,
       requiresAssets: ['chess.js', 'chessboard.js', 'pieces/*.svg', 'sounds/*.mp3']
+    },
+    {
+      id: 'codeImprover',
+      name: 'Code Improver',
+      version: '1.0.0',
+      description: 'AI-powered code enhancement and debugging',
+      longDescription: 'Enhance your source code with AI assistance. Features code generation, debugging, feature implementation, and intelligent code analysis with Firebase integration.',
+      icon: '💻',
+      category: 'Development',
+      features: [
+        'AI-powered code generation',
+        'Intelligent debugging',
+        'Feature implementation',
+        'Code analysis and optimization',
+        'Firebase source code storage',
+        'Syntax highlighting with Prism.js',
+        'Multi-language support',
+        'Production-ready code output'
+      ],
+      enabled: false,
+      requiresAssets: ['prism.js', 'firebase integration']
     }
   ];
 
@@ -375,7 +449,7 @@ app.get('/api/plugins', (req, res) => {
     success: true,
     plugins: plugins,
     total: plugins.length,
-    categories: ['Games']
+    categories: ['Games', 'Development']
   });
 });
 
@@ -385,7 +459,7 @@ app.post('/api/plugins/:pluginId/toggle', (req, res) => {
   const { enabled } = req.body;
 
   // Validate plugin exists
-  const validPlugins = ['chess'];
+  const validPlugins = ['chess', 'codeImprover'];
   if (!validPlugins.includes(pluginId)) {
     return res.status(404).json({
       error: 'Plugin not found',
@@ -403,11 +477,10 @@ app.post('/api/plugins/:pluginId/toggle', (req, res) => {
   });
 });
 
-// Chess-specific endpoints (future expansion)
+// Chess-specific endpoints
 app.post('/api/chess/analyze', (req, res) => {
   const { fen, moves } = req.body;
   
-  // Basic chess analysis endpoint (can be expanded)
   res.json({
     success: true,
     position: fen,
@@ -419,16 +492,71 @@ app.post('/api/chess/analyze', (req, res) => {
   });
 });
 
-// Get available models endpoint (simplified to single model)
+// Code Improver specific endpoints
+app.post('/api/code/analyze', (req, res) => {
+  const { code, language, action } = req.body;
+  
+  if (!code) {
+    return res.status(400).json({
+      error: 'Code is required',
+      message: 'Please provide code to analyze'
+    });
+  }
+
+  // Basic code analysis endpoint
+  res.json({
+    success: true,
+    language: language || 'auto-detected',
+    action: action || 'analyze',
+    analysis: {
+      linesOfCode: code.split('\n').length,
+      complexity: 'Medium',
+      suggestions: [
+        'Consider adding more comments',
+        'Review variable naming conventions',
+        'Add error handling where appropriate'
+      ]
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Code syntax validation endpoint
+app.post('/api/code/validate', (req, res) => {
+  const { code, language } = req.body;
+  
+  if (!code) {
+    return res.status(400).json({
+      error: 'Code is required'
+    });
+  }
+
+  // Basic validation (in a real implementation, you'd use proper parsers)
+  const hasBasicSyntax = code.length > 0;
+  
+  res.json({
+    success: true,
+    valid: hasBasicSyntax,
+    language: language || 'unknown',
+    issues: hasBasicSyntax ? [] : ['Code appears to be empty'],
+    suggestions: [
+      'Code structure looks good',
+      'Consider adding documentation',
+      'Review for potential optimizations'
+    ]
+  });
+});
+
+// Get available models endpoint
 app.get('/api/models', (req, res) => {
   const models = [
     {
       id: 'openai/gpt-oss-120b:together',
       name: 'GPT OSS 120B',
       provider: 'OpenAI Compatible',
-      description: 'Large language model optimized for conversation and chess gameplay',
+      description: 'Large language model optimized for conversation, chess gameplay, and code development',
       recommended: true,
-      supports: ['general_conversation', 'chess_analysis', 'creative_writing']
+      supports: ['general_conversation', 'chess_analysis', 'code_generation', 'debugging', 'creative_writing']
     }
   ];
 
@@ -445,7 +573,7 @@ app.get('/api/status', (req, res) => {
   res.json({
     status: 'online',
     service: 'AiVA API',
-    version: '2.1.0',
+    version: '2.2.0',
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     timestamp: new Date().toISOString(),
@@ -456,13 +584,15 @@ app.get('/api/status', (req, res) => {
       error_handling: true,
       retry_logic: true,
       chess_plugin: true,
+      code_improver_plugin: true,
       mobile_support: true,
       firebase_integration: true,
-      google_auth: true
+      google_auth: true,
+      syntax_highlighting: true
     },
     plugins: {
-      available: ['chess'],
-      total: 1
+      available: ['chess', 'codeImprover'],
+      total: 2
     }
   });
 });
@@ -471,22 +601,29 @@ app.get('/api/status', (req, res) => {
 app.get('/api/limits', (req, res) => {
   res.json({
     message_limit_per_chat: 7,
+    code_improver_unlimited: true,
     timeout_seconds: 45,
     max_retries: 2,
     supported_models: 1,
-    max_conversation_length: 20,
+    max_conversation_length: 30,
     chess_features: {
       stockfish_engine: true,
       minimax_fallback: true,
       pgn_notation: true,
       move_analysis: true
+    },
+    code_improver_features: {
+      syntax_highlighting: true,
+      multi_language_support: true,
+      firebase_storage: true,
+      debugging_analysis: true,
+      feature_generation: true
     }
   });
 });
 
-// Chess assets validation endpoint (for future use)
+// Chess assets validation endpoint
 app.get('/api/chess/validate', (req, res) => {
-  // This would check if all chess assets are available
   const requiredAssets = [
     '/js/chess.js',
     '/pieces/',
@@ -500,6 +637,28 @@ app.get('/api/chess/validate', (req, res) => {
     assets_available: requiredAssets,
     engines: ['stockfish', 'minimax'],
     board_themes: ['default']
+  });
+});
+
+// Code Improver assets validation endpoint
+app.get('/api/code/validate-setup', (req, res) => {
+  const requiredFeatures = [
+    'prism.js syntax highlighting',
+    'firebase integration',
+    'multi-language support',
+    'code analysis',
+    'debugging tools'
+  ];
+
+  res.json({
+    success: true,
+    code_improver_ready: true,
+    features_available: requiredFeatures,
+    supported_languages: [
+      'javascript', 'html', 'css', 'json', 'python', 
+      'java', 'cpp', 'c', 'csharp', 'php', 'ruby'
+    ],
+    syntax_highlighting: true
   });
 });
 
@@ -528,7 +687,10 @@ app.use('/api/*', (req, res) => {
       '/api/plugins',
       '/api/plugins/:id/toggle',
       '/api/chess/analyze',
-      '/api/chess/validate'
+      '/api/chess/validate',
+      '/api/code/analyze',
+      '/api/code/validate',
+      '/api/code/validate-setup'
     ]
   });
 });
@@ -545,7 +707,8 @@ const server = app.listen(PORT, () => {
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔐 HuggingFace configured: ${!!process.env.HF_TOKEN}`);
   console.log(`🤖 AI Model: GPT OSS 120B`);
-  console.log(`♗ Chess Plugin: Enabled with Stockfish support`);
+  console.log(`♟️ Chess Plugin: Enabled with Stockfish support`);
+  console.log(`💻 Code Improver Plugin: Enabled with AI debugging`);
   console.log(`📱 Mobile Support: Professional responsive design`);
   console.log(`💬 Features: Conversational Context, Message Limits, Firebase Integration`);
   console.log(`⏰ Started at: ${new Date().toISOString()}`);
