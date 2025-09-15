@@ -98,17 +98,8 @@ const ArchiveManager = {
             chatItem.className = 'p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors bg-gray-800';
             
             const isChess = chat.isChessConversation;
-            const isCodeImprover = chat.isCodeImproverConversation;
-            let icon = '';
-            let titlePrefix = '';
-            
-            if (isChess) {
-                icon = '♗';
-                titlePrefix = 'Chess: ';
-            } else if (isCodeImprover) {
-                icon = '💻';
-                titlePrefix = 'Code Improver: ';
-            }
+            const icon = isChess ? '♗' : '';
+            const titlePrefix = isChess ? 'Chess: ' : '';
             
             chatItem.innerHTML = `
                 <div class="font-medium text-sm truncate flex items-center gap-2">
@@ -170,10 +161,8 @@ const PluginManager = {
             document.getElementById(`${pluginName}Plugin`).classList.add('enabled');
             document.getElementById(`${pluginName}ToggleText`).textContent = 'Disable Plugin';
             
-            if (pluginName === PLUGIN_TYPES.CHESS) {
+            if (pluginName === 'chess') {
                 ChessPlugin.initialize();
-            } else if (pluginName === PLUGIN_TYPES.CODE_IMPROVER) {
-                CodeImproverPlugin.initialize();
             }
         }
         
@@ -183,7 +172,7 @@ const PluginManager = {
     
     // Update enabled plugins UI
     updateEnabledPluginsUI: function() {
-        // Update chess plugin status
+        // Update plugin status on load
         if (AppState.enabledPlugins.chess) {
             const chessBadge = document.getElementById('chessBadge');
             const chessPlugin = document.getElementById('chessPlugin');
@@ -197,20 +186,6 @@ const PluginManager = {
             if (chessToggleText) chessToggleText.textContent = 'Disable Plugin';
         }
 
-        // Update Code Improver plugin status
-        if (AppState.enabledPlugins.codeImprover) {
-            const codeImproverBadge = document.getElementById('codeImproverBadge');
-            const codeImproverPlugin = document.getElementById('codeImproverPlugin');
-            const codeImproverToggleText = document.getElementById('codeImproverToggleText');
-            
-            if (codeImproverBadge) {
-                codeImproverBadge.textContent = 'Enabled';
-                codeImproverBadge.className = 'plugin-enabled-badge';
-            }
-            if (codeImproverPlugin) codeImproverPlugin.classList.add('enabled');
-            if (codeImproverToggleText) codeImproverToggleText.textContent = 'Disable Plugin';
-        }
-
         // Update enabled plugins list in sidebar
         const enabledList = Elements.enabledPlugins;
         const mobileEnabledList = Elements.mobileEnabledPlugins;
@@ -220,23 +195,18 @@ const PluginManager = {
         
         Object.keys(AppState.enabledPlugins).forEach(pluginName => {
             if (AppState.enabledPlugins[pluginName]) {
-                const pluginItem = this.createEnabledPluginItem(pluginName);
-                const mobilePluginItem = this.createEnabledPluginItem(pluginName);
+                const pluginItem = UIManager.createEnabledPluginItem(pluginName);
+                const mobilePluginItem = UIManager.createEnabledPluginItem(pluginName);
                 
                 pluginItem.addEventListener('click', () => {
-                    if (pluginName === PLUGIN_TYPES.CHESS) {
+                    if (pluginName === 'chess') {
                         ChatManager.startChessConversation();
-                    } else if (pluginName === PLUGIN_TYPES.CODE_IMPROVER) {
-                        ChatManager.startCodeImproverConversation();
                     }
                 });
                 
                 mobilePluginItem.addEventListener('click', () => {
-                    if (pluginName === PLUGIN_TYPES.CHESS) {
+                    if (pluginName === 'chess') {
                         ChatManager.startChessConversation();
-                        UIManager.closeMobileSidebar();
-                    } else if (pluginName === PLUGIN_TYPES.CODE_IMPROVER) {
-                        ChatManager.startCodeImproverConversation();
                         UIManager.closeMobileSidebar();
                     }
                 });
@@ -245,34 +215,6 @@ const PluginManager = {
                 if (mobileEnabledList) mobileEnabledList.appendChild(mobilePluginItem);
             }
         });
-    },
-
-    // Create enabled plugin item
-    createEnabledPluginItem: function(pluginName) {
-        const item = document.createElement('div');
-        item.className = 'enabled-plugin-item';
-        
-        let icon, title;
-        switch(pluginName) {
-            case PLUGIN_TYPES.CHESS:
-                icon = '♗';
-                title = 'Chess Master';
-                break;
-            case PLUGIN_TYPES.CODE_IMPROVER:
-                icon = '💻';
-                title = 'Code Improver';
-                break;
-            default:
-                icon = '🧩';
-                title = pluginName;
-        }
-        
-        item.innerHTML = `
-            <span class="text-lg">${icon}</span>
-            <span class="text-sm font-medium">${title}</span>
-        `;
-        
-        return item;
     }
 };
 
