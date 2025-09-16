@@ -2,7 +2,7 @@
 
 const AdminPlugin = {
     // Admin email (only this user can see admin panel)
-    ADMIN_EMAIL: '123@gmail.com',
+    ADMIN_EMAIL: 'samiulhaquerafsan@gmail.com',
     
     // Check if current user is admin
     isAdmin: function() {
