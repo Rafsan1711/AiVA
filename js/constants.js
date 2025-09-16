@@ -1,4 +1,4 @@
-// Application Constants
+// Updated Application Constants with New Features
 
 // Chess piece candidates for image resolution
 const pieceCandidates = {
@@ -72,3 +72,171 @@ const AI_MODES = {
 
 // Message limits
 const MAX_MESSAGES_PER_CHAT = 7;
+
+// Admin configuration
+const ADMIN_CONFIG = {
+    ADMIN_EMAIL: '123@gmail.com',
+    DEFAULT_LIMITS: {
+        responseLimit: 0, // 0 means unlimited
+        dailyChatLimit: 0, // 0 means unlimited
+        customMessage: 'You have reached your usage limit. Please contact support.'
+    }
+};
+
+// Typing effect configuration
+const TYPING_CONFIG = {
+    DEFAULT_SPEED: 25, // Characters per second
+    MIN_DELAY: 10, // Minimum delay between characters (ms)
+    MAX_DELAY: 50, // Maximum delay between characters (ms)
+    PUNCTUATION_DELAY: 200, // Extra delay after punctuation
+    WORD_DELAY: 100, // Extra delay after words
+    CURSOR_BLINK_SPEED: 500 // Cursor blink speed (ms)
+};
+
+// Code formatter configuration
+const CODE_CONFIG = {
+    SUPPORTED_LANGUAGES: [
+        'javascript', 'typescript', 'python', 'java', 'cpp', 'c', 'csharp',
+        'html', 'css', 'sql', 'php', 'ruby', 'go', 'rust', 'kotlin',
+        'swift', 'dart', 'bash', 'json', 'xml', 'yaml', 'markdown'
+    ],
+    PRISM_THEME: 'dark', // Default Prism theme
+    AUTO_DETECT_LANGUAGE: true, // Auto-detect code language
+    SHOW_LINE_NUMBERS: true, // Show line numbers in code blocks
+    COPY_BUTTON_TEXT: '📋 Copy',
+    COPY_SUCCESS_TEXT: '✅ Copied!'
+};
+
+// Continue functionality keywords
+const CONTINUE_INDICATORS = [
+    'continue',
+    'continued...',
+    'to be continued',
+    'more...',
+    'part 1 of',
+    'part 2 of',
+    '...',
+    'see next message',
+    'continuing...'
+];
+
+// Chart and visualization configuration
+const VISUALIZATION_CONFIG = {
+    DEFAULT_CHART_COLORS: [
+        '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
+        '#8b5cf6', '#f97316', '#06b6d4', '#84cc16'
+    ],
+    CHART_BACKGROUND: '#1f2937',
+    CHART_GRID_COLOR: '#374151',
+    CHART_TEXT_COLOR: '#f3f4f6',
+    DEFAULT_CHART_HEIGHT: 300,
+    DEFAULT_CHART_WIDTH: 500
+};
+
+// Enhanced message formatting patterns
+const MESSAGE_PATTERNS = {
+    CODE_BLOCK: /```(\w*)\n?([\s\S]*?)```/g,
+    INLINE_CODE: /`([^`]+)`/g,
+    BOLD: /\*\*([^*]+)\*\*/g,
+    ITALIC: /\*([^*]+)\*/g,
+    HEADER_1: /^# (.+)$/gm,
+    HEADER_2: /^## (.+)$/gm,
+    HEADER_3: /^### (.+)$/gm,
+    UNORDERED_LIST: /^\- (.+)$/gm,
+    ORDERED_LIST: /^\d+\. (.+)$/gm,
+    HORIZONTAL_RULE: /\n---\n/g
+};
+
+// Firebase paths for admin functionality
+const FIREBASE_PATHS = {
+    USER_LIMITS: 'userLimits',
+    USER_USAGE: 'userUsage',
+    CHATS: 'chats',
+    ADMIN_SETTINGS: 'adminSettings'
+};
+
+// Error messages
+const ERROR_MESSAGES = {
+    NETWORK_ERROR: 'Network error occurred. Please check your internet connection.',
+    AI_SERVICE_ERROR: 'AI service temporarily unavailable. Please try again.',
+    RATE_LIMIT: 'Service is busy. Please wait a moment and try again.',
+    GENERAL_ERROR: 'An unexpected error occurred. Please try again.',
+    ADMIN_ONLY: 'This feature is only available to administrators.',
+    LIMIT_REACHED: 'You have reached your usage limit.',
+    INVALID_INPUT: 'Please provide a valid input.'
+};
+
+// Success messages
+const SUCCESS_MESSAGES = {
+    CODE_COPIED: 'Code copied to clipboard!',
+    SETTINGS_SAVED: 'Settings saved successfully!',
+    CHAT_ARCHIVED: 'Chat archived successfully!',
+    PLUGIN_ENABLED: 'Plugin enabled successfully!',
+    PLUGIN_DISABLED: 'Plugin disabled successfully!',
+    USER_LIMITS_UPDATED: 'User limits updated successfully!'
+};
+
+// UI Animation durations (in milliseconds)
+const ANIMATION_DURATIONS = {
+    FADE_IN: 300,
+    SLIDE_IN: 250,
+    BOUNCE: 400,
+    TYPING_CURSOR: 500,
+    BUTTON_HOVER: 200,
+    MODAL_TRANSITION: 250
+};
+
+// Local storage keys
+const STORAGE_KEYS = {
+    TERMS_ACCEPTED: 'aivaTermsAccepted',
+    ARCHIVED_CHATS: 'aivaArchivedChats',
+    ENABLED_PLUGINS: 'aivaEnabledPlugins',
+    USER_PREFERENCES: 'aivaUserPreferences',
+    THEME_SETTINGS: 'aivaThemeSettings'
+};
+
+// Plugin configuration
+const PLUGIN_CONFIG = {
+    CHESS: {
+        NAME: 'Chess Master',
+        DESCRIPTION: 'Play chess games with AI opponent',
+        ICON: '♗',
+        CATEGORY: 'Games',
+        REQUIRES_ASSETS: ['chess.js', 'chessboard.js', 'pieces/*.svg', 'sounds/*.mp3']
+    },
+    ADMIN: {
+        NAME: 'Admin Panel',
+        DESCRIPTION: 'Administrative controls and user management',
+        ICON: '⚙️',
+        CATEGORY: 'Administration',
+        RESTRICTED: true,
+        ALLOWED_USERS: [ADMIN_CONFIG.ADMIN_EMAIL]
+    }
+};
+
+// Export all constants for use in other modules
+if (typeof window !== 'undefined') {
+    window.APP_CONSTANTS = {
+        pieceCandidates,
+        weights,
+        pst_w,
+        pst_b,
+        pstOpponent,
+        pstSelf,
+        CHESS_SOUNDS,
+        AI_MODES,
+        MAX_MESSAGES_PER_CHAT,
+        ADMIN_CONFIG,
+        TYPING_CONFIG,
+        CODE_CONFIG,
+        CONTINUE_INDICATORS,
+        VISUALIZATION_CONFIG,
+        MESSAGE_PATTERNS,
+        FIREBASE_PATHS,
+        ERROR_MESSAGES,
+        SUCCESS_MESSAGES,
+        ANIMATION_DURATIONS,
+        STORAGE_KEYS,
+        PLUGIN_CONFIG
+    };
+}
