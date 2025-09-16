@@ -9,6 +9,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" crossorigin="anonymous">
+    
+    <!-- Prism.js Core CSS (Dark Theme) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/line-numbers/prism-line-numbers.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/show-language/prism-show-language.min.css">
+    
+    <!-- Chart.js for graphs and charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="bg-gray-900 text-white h-screen overflow-hidden">
@@ -92,6 +101,32 @@
                 </div>
                 <button id="clearHistory" class="w-full bg-red-600 hover:bg-red-700 p-2 rounded">Clear Chat History</button>
                 <button id="signOutBtn" class="w-full bg-gray-600 hover:bg-gray-700 p-2 rounded">Sign Out</button>
+                
+                <!-- Admin Panel (only visible for admin) -->
+                <div id="adminPanel" class="hidden border-t border-gray-600 pt-4 mt-4">
+                    <h3 class="text-lg font-semibold mb-3 text-yellow-400">Admin Panel</h3>
+                    <div class="admin-controls space-y-4">
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <h4 class="font-medium mb-2">User Management</h4>
+                            <div class="space-y-2">
+                                <input id="adminUserEmail" type="email" placeholder="User Email" class="w-full p-2 bg-gray-600 rounded text-sm">
+                                <div class="flex gap-2">
+                                    <input id="adminResponseLimit" type="number" placeholder="Response Limit" class="flex-1 p-2 bg-gray-600 rounded text-sm" min="0" max="100">
+                                    <input id="adminChatLimit" type="number" placeholder="Daily Chat Limit" class="flex-1 p-2 bg-gray-600 rounded text-sm" min="0" max="50">
+                                </div>
+                                <textarea id="adminCustomMessage" placeholder="Custom limit message" class="w-full p-2 bg-gray-600 rounded text-sm h-20 resize-none"></textarea>
+                                <button id="updateUserLimits" class="w-full bg-yellow-600 hover:bg-yellow-700 p-2 rounded text-sm font-medium">Update User Limits</button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <h4 class="font-medium mb-2">Current Users</h4>
+                            <div id="userLimitsList" class="space-y-2 max-h-40 overflow-y-auto">
+                                <!-- User limits will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -141,6 +176,11 @@
     <!-- Warning Banner (hidden by default) -->
     <div id="warningBanner" class="warning-banner hidden">
         ⚠️ You have reached the message limit for this chat (7/7). Please start a new chat to continue.
+    </div>
+
+    <!-- Custom Limit Message Banner -->
+    <div id="customLimitBanner" class="warning-banner hidden bg-red-600">
+        <span id="customLimitMessage"></span>
     </div>
 
     <!-- Mobile Header -->
@@ -340,6 +380,12 @@
     <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js" crossorigin="anonymous"></script>
     <script src="js/chess.js"></script>
 
+    <!-- Prism.js Core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/plugins/show-language/prism-show-language.min.js"></script>
+
     <!-- Sounds -->
     <audio id="moveSound" src="sounds/move.mp3"></audio>
     <audio id="captureSound" src="sounds/capture.mp3"></audio>
@@ -360,6 +406,9 @@
     <script src="js/messages.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/plugins/chess-plugin.js"></script>
+    <script src="js/plugins/admin-plugin.js"></script>
+    <script src="js/code-formatter.js"></script>
+    <script src="js/typing-effect.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
