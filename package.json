@@ -1,13 +1,15 @@
 {
-  "name": "aiva-chatbot",
-  "version": "1.0.0",
-  "description": "AiVA - AI Virtual Assistant Chatbot",
+  "name": "aiva-enhanced-chatbot",
+  "version": "3.0.0",
+  "description": "AiVA Enhanced - AI Virtual Assistant with Code Analysis, Data Visualization & Rich Formatting",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "echo 'Build complete'",
-    "test": "echo 'No tests specified'"
+    "build": "echo 'Build complete - Static files ready for deployment'",
+    "test": "echo 'Testing enhanced features'",
+    "lint": "echo 'Code linting'",
+    "deploy": "echo 'Deploying AiVA Enhanced'"
   },
   "keywords": [
     "chatbot",
@@ -17,9 +19,23 @@
     "nodejs",
     "express",
     "firebase",
-    "huggingface"
+    "huggingface",
+    "code-analysis",
+    "data-visualization",
+    "chess-plugin",
+    "markdown-formatting",
+    "file-upload",
+    "dynamic-libraries",
+    "mobile-responsive",
+    "admin-panel",
+    "real-time-chat",
+    "syntax-highlighting",
+    "prism-js",
+    "chart-js",
+    "stockfish-chess",
+    "gsap-animations"
   ],
-  "author": "Your Name",
+  "author": "Rafsan",
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -37,10 +53,96 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/aiva-chatbot.git"
+    "url": "https://github.com/rafsan/aiva-enhanced-chatbot.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/aiva-chatbot/issues"
+    "url": "https://github.com/rafsan/aiva-enhanced-chatbot/issues"
   },
-  "homepage": "https://github.com/yourusername/aiva-chatbot#readme"
+  "homepage": "https://github.com/rafsan/aiva-enhanced-chatbot#readme",
+  "config": {
+    "port": 3000,
+    "maxFileSize": "5mb",
+    "aiModel": "openai/gpt-oss-120b:together"
+  },
+  "features": {
+    "coreFeatures": [
+      "AI Chat with Conversational Context",
+      "Firebase Authentication & Database",
+      "Real-time Message Sync",
+      "Mobile Responsive Design",
+      "User Management System"
+    ],
+    "enhancedFeatures": [
+      "Code File Upload & Analysis",
+      "Syntax Highlighting with Prism.js",
+      "Data Visualization (Charts/Graphs)",
+      "Interactive Comparison Tables",
+      "Rich Text Formatting & Markdown",
+      "Dynamic Library Loading",
+      "Professional Animations (AOS, GSAP, Lottie)"
+    ],
+    "plugins": [
+      "Chess Master with Stockfish Engine",
+      "Dynamic Chess Library Loading",
+      "Interactive Chess Board",
+      "Move Analysis & PGN Notation"
+    ],
+    "adminFeatures": [
+      "Admin Panel for User Management",
+      "Custom Message Limits per User",
+      "Daily File Upload Limits",
+      "System Monitoring"
+    ]
+  },
+  "cdn-libraries": {
+    "codeHighlighting": [
+      "https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-okaidia.min.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js"
+    ],
+    "dataVisualization": [
+      "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/js/tabulator.min.js"
+    ],
+    "animations": [
+      "https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js"
+    ],
+    "chessEngine": [
+      "https://code.jquery.com/jquery-3.5.1.js",
+      "https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"
+    ],
+    "utilities": [
+      "https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/loadjs/4.3.0/loadjs.min.js"
+    ]
+  },
+  "supportedLanguages": {
+    "programmingLanguages": [
+      "JavaScript", "TypeScript", "Python", "Java", "C++", "C", "PHP", 
+      "Ruby", "Go", "Rust", "Swift", "Kotlin", "Scala", "R", "SQL"
+    ],
+    "markupLanguages": [
+      "HTML", "CSS", "JSON", "XML", "YAML", "Markdown"
+    ],
+    "frameworks": [
+      "React (JSX)", "Vue.js", "Angular", "Node.js"
+    ]
+  },
+  "deployment": {
+    "platforms": [
+      "Render.com",
+      "Heroku", 
+      "Vercel",
+      "Railway",
+      "DigitalOcean"
+    ],
+    "requirements": {
+      "environment": "Node.js 16+",
+      "database": "Firebase Realtime Database",
+      "authentication": "Firebase Auth",
+      "aiService": "HuggingFace API"
+    }
+  }
 }
