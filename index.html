@@ -9,9 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" crossorigin="anonymous">
-    
-    <!-- Dynamic CSS Loading Variables -->
-    <style id="dynamicStyles">
+    <style>
         body {
             font-family: 'Inter', sans-serif;
             background: #111827;
@@ -42,109 +40,13 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
-        
-        /* Code Block Styles */
-        .code-container {
-            position: relative;
-            margin: 16px 0;
-            background: #282828;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #374151;
-        }
-        .code-header {
-            background: #1f2937;
-            padding: 8px 16px;
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            border-bottom: 1px solid #374151;
-        }
-        .code-language {
-            font-size: 12px;
-            color: #9ca3af;
-            font-weight: 500;
-        }
-        .code-copy-btn {
-            background: #4f46e5;
-            color: white;
-            border: none;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .code-copy-btn:hover {
-            background: #4338ca;
-        }
-        .code-copy-btn.copied {
-            background: #10b981;
-        }
-        pre[class*="language-"] {
-            margin: 0 !important;
-            padding: 16px !important;
-            background: #282828 !important;
-            border-radius: 0 !important;
-        }
-        
-        /* AI Response Styling */
-        .ai-message {
-            background: transparent !important;
-            padding: 0 !important;
-            margin: 16px 0;
-        }
-        .ai-message .message-content {
-            color: #f9fafb;
-            line-height: 1.6;
-        }
-        .ai-message h1, .ai-message h2, .ai-message h3 {
-            font-weight: 600;
-            margin: 16px 0 8px 0;
-            color: #e5e7eb;
-        }
-        .ai-message h1 { font-size: 1.5rem; }
-        .ai-message h2 { font-size: 1.3rem; }
-        .ai-message h3 { font-size: 1.1rem; }
-        .ai-message strong {
-            font-weight: 600;
-            color: #ffffff;
-        }
-        .ai-message em {
-            font-style: italic;
-            color: #d1d5db;
-        }
-        .ai-message ul, .ai-message ol {
+        .code-block {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 16px;
             margin: 12px 0;
-            padding-left: 20px;
+            overflow-x: auto;
         }
-        .ai-message li {
-            margin: 4px 0;
-        }
-        
-        /* Chart Containers */
-        .chart-container {
-            background: #1f2937;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 16px 0;
-            border: 1px solid #374151;
-        }
-        .chart-title {
-            color: #e5e7eb;
-            font-weight: 600;
-            margin-bottom: 16px;
-            font-size: 1.1rem;
-        }
-        
-        /* Comparison Table Styles */
-        .comparison-table {
-            margin: 16px 0;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #374151;
-        }
-        
         .sidebar-scroll::-webkit-scrollbar {
             width: 6px;
         }
@@ -214,98 +116,6 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
-        }
-        
-        /* Admin Panel Styles */
-        .admin-panel {
-            background: #1f2937;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 16px 0;
-            border: 2px solid #dc2626;
-        }
-        .user-management-card {
-            background: #374151;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 8px 0;
-            border: 1px solid #4b5563;
-        }
-        .admin-input {
-            background: #4b5563;
-            border: 1px solid #6b7280;
-            border-radius: 6px;
-            padding: 8px 12px;
-            color: #f9fafb;
-            width: 80px;
-            margin: 0 8px;
-        }
-        .admin-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-        
-        /* Input Tools Styles */
-        .input-tools {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .tool-button {
-            width: 40px;
-            height: 40px;
-            background: #374151;
-            border: 1px solid #4b5563;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .tool-button:hover {
-            background: #4b5563;
-            transform: scale(1.05);
-        }
-        .tool-menu {
-            position: absolute;
-            bottom: 60px;
-            left: 0;
-            background: #374151;
-            border: 1px solid #4b5563;
-            border-radius: 12px;
-            padding: 8px;
-            display: none;
-            gap: 8px;
-            flex-direction: column;
-            z-index: 100;
-        }
-        .tool-menu.active {
-            display: flex;
-        }
-        .tool-option {
-            padding: 12px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .tool-option:hover {
-            background: #4b5563;
-        }
-        .file-input {
-            display: none;
-        }
-        .file-status {
-            background: #1f2937;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin: 8px 0;
-            font-size: 12px;
-            color: #9ca3af;
         }
         
         /* Mobile Responsive */
@@ -441,19 +251,6 @@
             .chat-area {
                 width: 100%;
             }
-            .code-container {
-                margin: 12px 0;
-            }
-            .chart-container {
-                padding: 12px;
-                margin: 12px 0;
-            }
-            .ai-message {
-                margin: 12px 0;
-            }
-            .tool-menu {
-                width: 200px;
-            }
         }
         
         @media (min-width: 769px) {
@@ -470,29 +267,12 @@
                 width: calc(100% - 320px);
             }
         }
-
-        /* Animation Enhancement */
-        .animate-slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .animate-scale-in {
-            animation: scaleIn 0.2s ease-out;
-        }
-        @keyframes scaleIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen overflow-hidden">
     <!-- Terms Modal -->
     <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-gray-800 p-8 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-700 animate-scale-in">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto border border-gray-700">
             <div class="flex items-center gap-3 mb-6">
                 <div class="logo-placeholder">AI</div>
                 <h2 class="text-2xl font-bold">Terms of Service & Privacy Policy</h2>
@@ -520,7 +300,7 @@
 
     <!-- Auth Modal -->
     <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full mx-4 border border-gray-700 animate-scale-in">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full mx-4 border border-gray-700">
             <div class="text-center mb-6">
                 <div class="logo-placeholder mx-auto mb-3">AI</div>
                 <h1 class="text-4xl font-bold mb-2">AiVA</h1>
@@ -556,7 +336,7 @@
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-6 rounded-lg max-w-2xl w-full mx-4 border border-gray-700 max-h-[80vh] overflow-y-auto animate-scale-in">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold">Settings</h2>
                 <button id="closeSettings" class="text-gray-400 hover:text-white text-2xl">&times;</button>
@@ -571,20 +351,12 @@
                 <button id="clearHistory" class="w-full bg-red-600 hover:bg-red-700 p-2 rounded">Clear Chat History</button>
                 <button id="signOutBtn" class="w-full bg-gray-600 hover:bg-gray-700 p-2 rounded">Sign Out</button>
             </div>
-            
-            <!-- Admin Panel (Only for 123@gmail.com) -->
-            <div id="adminPanel" class="admin-panel hidden">
-                <h3 class="text-lg font-semibold mb-4 text-red-400">Admin Panel</h3>
-                <div id="userManagement">
-                    <!-- User management will be populated here -->
-                </div>
-            </div>
         </div>
     </div>
 
     <!-- Archive Modal -->
     <div id="archiveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700 animate-scale-in">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 border border-gray-700">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold">Archived Chats</h2>
                 <button id="closeArchive" class="text-gray-400 hover:text-white text-2xl">&times;</button>
@@ -597,7 +369,7 @@
 
     <!-- Plugins Modal -->
     <div id="pluginsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
-        <div class="bg-gray-800 p-6 rounded-lg max-w-2xl w-full mx-4 border border-gray-700 max-h-[80vh] overflow-y-auto animate-scale-in">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-2xl w-full mx-4 border border-gray-700 max-h-[80vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-semibold">Plugins</h2>
                 <button id="closePlugins" class="text-gray-400 hover:text-white text-2xl">&times;</button>
@@ -625,13 +397,8 @@
     </div>
 
     <!-- Warning Banner (hidden by default) -->
-    <div id="warningBanner" class="warning-banner hidden animate-slide-up">
+    <div id="warningBanner" class="warning-banner hidden">
         ⚠️ You have reached the message limit for this chat (7/7). Please start a new chat to continue.
-    </div>
-
-    <!-- File Limit Warning Banner -->
-    <div id="fileLimitBanner" class="warning-banner hidden animate-slide-up">
-        ⚠️ Daily file upload limit reached (1/1). Please try again tomorrow.
     </div>
 
     <!-- Mobile Header -->
@@ -669,7 +436,7 @@
                 <div class="flex gap-2">
                     <button id="newChatBtn" class="p-2 hover:bg-gray-700 rounded" title="New Chat">+</button>
                     <button id="settingsBtn" class="p-2 hover:bg-gray-700 rounded" title="Settings">⚙</button>
-                    <button id="archiveBtn" class="p-2 hover:bg-gray-700 rounded" title="Archives">📋</button>
+                    <button id="archiveBtn" class="p-2 hover:bg-gray-700 rounded" title="Archives">📁</button>
                 </div>
             </div>
 
@@ -732,7 +499,7 @@
             <div class="p-4 border-b border-gray-700 flex gap-2">
                 <button id="mobileNewChatBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 p-2 rounded text-sm font-medium">New Chat</button>
                 <button id="mobileSettingsBtn" class="p-2 hover:bg-gray-700 rounded" title="Settings">⚙</button>
-                <button id="mobileArchiveBtn" class="p-2 hover:bg-gray-700 rounded" title="Archives">📋</button>
+                <button id="mobileArchiveBtn" class="p-2 hover:bg-gray-700 rounded" title="Archives">📁</button>
             </div>
 
             <!-- Mobile Plugins Section -->
@@ -789,7 +556,7 @@
                 </div>
                 <!-- Chat Menu Dropdown -->
                 <div id="chatDropdown" class="dropdown">
-                    <button id="archiveChat">📋 Archive Chat</button>
+                    <button id="archiveChat">📁 Archive Chat</button>
                     <button id="deleteChat" class="text-red-400">🗑️ Delete Chat</button>
                 </div>
             </div>
@@ -806,34 +573,6 @@
 
             <!-- Input Area -->
             <div class="p-4 border-t border-gray-700">
-                <!-- Input Tools -->
-                <div class="input-tools relative">
-                    <div class="tool-button" id="toolsButton">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                    </div>
-                    
-                    <!-- Tools Menu -->
-                    <div id="toolsMenu" class="tool-menu">
-                        <div class="tool-option" id="fileOption">
-                            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span>Upload Code File</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Hidden File Input -->
-                    <input type="file" id="codeFileInput" class="file-input" accept=".js,.html,.css,.py,.java,.cpp,.c,.php,.rb,.go,.rs,.ts,.jsx,.vue,.swift,.kt,.scala,.r,.sql,.json,.xml,.yaml,.yml">
-                    
-                    <!-- File Status -->
-                    <div id="fileStatus" class="file-status hidden">
-                        <span id="fileName"></span>
-                        <button id="removeFile" class="ml-2 text-red-400 hover:text-red-300">✕</button>
-                    </div>
-                </div>
-                
                 <div class="flex gap-3 items-end">
                     <div class="flex-1">
                         <textarea id="messageInput" 
@@ -854,8 +593,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-    <!-- Chess Dependencies (loaded dynamically) -->
-    
+    <!-- Chess Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js" crossorigin="anonymous"></script>
+    <script src="js/chess.js"></script>
+
     <!-- Sounds -->
     <audio id="moveSound" src="sounds/move.mp3"></audio>
     <audio id="captureSound" src="sounds/capture.mp3"></audio>
@@ -891,21 +633,6 @@
         let enabledPlugins = {};
         let isChessConversation = false;
         let chessGameData = null;
-        let dailyFileUploads = 0;
-        let maxDailyFiles = 1;
-        let currentUploadedFile = null;
-        let userLimits = {};
-
-        // Dynamic library loading state
-        let librariesLoaded = {
-            prism: false,
-            chart: false,
-            chess: false,
-            animations: false,
-            d3: false,
-            tabulator: false,
-            clipboard: false
-        };
 
         // Server configuration
         const SERVER_BASE = "https://aiva-gwm9.onrender.com";
@@ -918,7 +645,6 @@
             archiveModal: document.getElementById('archiveModal'),
             pluginsModal: document.getElementById('pluginsModal'),
             warningBanner: document.getElementById('warningBanner'),
-            fileLimitBanner: document.getElementById('fileLimitBanner'),
             mainApp: document.getElementById('mainApp'),
             loginForm: document.getElementById('loginForm'),
             signUpForm: document.getElementById('signUpForm'),
@@ -946,19 +672,10 @@
             mobileSidebar: document.getElementById('mobileSidebar'),
             mobileOverlay: document.getElementById('mobileOverlay'),
             chatTitle: document.getElementById('chatTitle'),
-            chatAvatar: document.getElementById('chatAvatar'),
-            adminPanel: document.getElementById('adminPanel'),
-            userManagement: document.getElementById('userManagement'),
-            toolsButton: document.getElementById('toolsButton'),
-            toolsMenu: document.getElementById('toolsMenu'),
-            fileOption: document.getElementById('fileOption'),
-            codeFileInput: document.getElementById('codeFileInput'),
-            fileStatus: document.getElementById('fileStatus'),
-            fileName: document.getElementById('fileName'),
-            removeFile: document.getElementById('removeFile')
+            chatAvatar: document.getElementById('chatAvatar')
         };
 
-        // Chess Engine Variables
+        // Chess Engine Variables (from original chess code)
         let chessBoard = null;
         let chessGame = null;
         let globalSum = 0;
@@ -976,7 +693,7 @@
         let pieceImgResolved = {};
         let pgn_moves = [];
 
-        // Chess piece candidates
+        // Chess piece candidates (from original code)
         const pieceCandidates = {
             'wK': ['pieces/wK.svg', 'pieces/wKing.svg', 'pieces/WK.svg'],
             'wQ': ['pieces/wQ.svg', 'pieces/wQueen.svg', 'pieces/WQ.svg'],
@@ -992,7 +709,7 @@
             'bP': ['pieces/bP.svg', 'pieces/bPawn.svg', 'pieces/BP.svg']
         };
 
-        // Chess evaluation weights and position tables
+        // Chess evaluation weights and position tables (from original code)
         const weights = { p: 100, n: 280, b: 320, r: 479, q: 929, k: 60000, k_e: 60000 };
         const pst_w = {
             p: [[100, 100, 100, 100, 105, 100, 100, 100], [78, 83, 86, 73, 102, 82, 85, 90], [7, 29, 21, 44, 40, 31, 44, 7], [-17, 16, -2, 15, 14, 0, 15, -13], [-26, 3, 10, 9, 6, 1, 0, -23], [-22, 9, 5, -11, -10, -2, 3, -19], [-31, 8, -7, -37, -36, -14, 3, -31], [0, 0, 0, 0, 0, 0, 0, 0]],
@@ -1007,164 +724,10 @@
         const pstOpponent = { w: pst_b, b: pst_w };
         const pstSelf = { w: pst_w, b: pst_b };
 
-        // Dynamic Library Loading Functions
-        function loadLibrary(name, urls, callback) {
-            if (librariesLoaded[name]) {
-                if (callback) callback();
-                return;
-            }
-
-            const scripts = [];
-            const stylesheets = [];
-
-            urls.forEach(url => {
-                if (url.includes('.css')) {
-                    stylesheets.push(url);
-                } else {
-                    scripts.push(url);
-                }
-            });
-
-            let loadedCount = 0;
-            const totalToLoad = scripts.length + stylesheets.length;
-
-            function checkComplete() {
-                loadedCount++;
-                if (loadedCount === totalToLoad) {
-                    librariesLoaded[name] = true;
-                    if (callback) callback();
-                }
-            }
-
-            // Load stylesheets
-            stylesheets.forEach(url => {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = url;
-                link.onload = checkComplete;
-                link.onerror = checkComplete;
-                document.head.appendChild(link);
-            });
-
-            // Load scripts
-            scripts.forEach(url => {
-                const script = document.createElement('script');
-                script.src = url;
-                script.onload = checkComplete;
-                script.onerror = checkComplete;
-                document.head.appendChild(script);
-            });
-
-            if (totalToLoad === 0 && callback) callback();
-        }
-
-        // Load Prism.js for code highlighting
-        function loadPrismLibrary(callback) {
-            if (librariesLoaded.prism) {
-                if (callback) callback();
-                return;
-            }
-
-            const prismUrls = [
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-okaidia.min.css',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-javascript.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-python.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-java.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-cpp.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-c.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-php.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-css.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-typescript.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-jsx.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-go.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-sql.min.js'
-            ];
-
-            loadLibrary('prism', prismUrls, () => {
-                loadClipboardLibrary(callback);
-            });
-        }
-
-        // Load clipboard.js for copy functionality
-        function loadClipboardLibrary(callback) {
-            if (librariesLoaded.clipboard) {
-                if (callback) callback();
-                return;
-            }
-            
-            loadLibrary('clipboard', ['https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js'], callback);
-        }
-
-        // Load Chart.js for charts
-        function loadChartLibrary(callback) {
-            loadLibrary('chart', ['https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.min.js'], callback);
-        }
-
-        // Load D3.js for advanced visualizations
-        function loadD3Library(callback) {
-            loadLibrary('d3', ['https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js'], callback);
-        }
-
-        // Load Tabulator for tables
-        function loadTabulatorLibrary(callback) {
-            loadLibrary('tabulator', [
-                'https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/css/tabulator.min.css',
-                'https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/js/tabulator.min.js'
-            ], callback);
-        }
-
-        // Load Animation Libraries
-        function loadAnimationLibraries(callback) {
-            if (librariesLoaded.animations) {
-                if (callback) callback();
-                return;
-            }
-
-            const animationUrls = [
-                'https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css',
-                'https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js'
-            ];
-
-            loadLibrary('animations', animationUrls, () => {
-                // Initialize AOS after loading
-                if (typeof AOS !== 'undefined') {
-                    AOS.init({
-                        duration: 800,
-                        easing: 'ease-in-out',
-                        once: true
-                    });
-                }
-                if (callback) callback();
-            });
-        }
-
-        // Load Chess Libraries dynamically
-        function loadChessLibraries(callback) {
-            if (librariesLoaded.chess) {
-                if (callback) callback();
-                return;
-            }
-
-            const chessUrls = [
-                'https://code.jquery.com/jquery-3.5.1.js',
-                'https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js',
-                'js/chess.js'
-            ];
-
-            loadLibrary('chess', chessUrls, () => {
-                if (callback) callback();
-            });
-        }
-
         // Initialize app
         function initApp() {
             loadUserPreferences();
             setupEventListeners();
-            loadAnimationLibraries(); // Load animations on startup
-            
             if (hasAcceptedTerms) {
                 elements.termsModal.classList.add('hidden');
                 checkAuthState();
@@ -1173,7 +736,7 @@
             }
         }
 
-        // Load user preferences from localStorage and Firebase
+        // Load user preferences from localStorage
         function loadUserPreferences() {
             hasAcceptedTerms = localStorage.getItem('aivaTermsAccepted') === 'true';
             const savedArchived = localStorage.getItem('aivaArchivedChats');
@@ -1192,11 +755,6 @@
                     enabledPlugins = {};
                 }
             }
-            
-            // Load daily file upload count
-            const today = new Date().toDateString();
-            const savedUploads = localStorage.getItem('aivaFileUploads_' + today);
-            dailyFileUploads = savedUploads ? parseInt(savedUploads) : 0;
         }
 
         // Save user preferences
@@ -1204,10 +762,6 @@
             localStorage.setItem('aivaTermsAccepted', 'true');
             localStorage.setItem('aivaArchivedChats', JSON.stringify(archivedChats));
             localStorage.setItem('aivaEnabledPlugins', JSON.stringify(enabledPlugins));
-            
-            // Save daily file uploads
-            const today = new Date().toDateString();
-            localStorage.setItem('aivaFileUploads_' + today, dailyFileUploads.toString());
         }
 
         // Terms Modal
@@ -1233,7 +787,6 @@
                     currentUser = user;
                     showMainApp();
                     loadUserData();
-                    loadUserLimits();
                 } else {
                     showAuthModal();
                 }
@@ -1251,31 +804,6 @@
             loadChatHistory();
             updateEnabledPluginsUI();
             startNewChat();
-        }
-
-        // User Limits Management
-        function loadUserLimits() {
-            if (!currentUser) return;
-            
-            database.ref(`userLimits/${currentUser.uid}`).on('value', (snapshot) => {
-                const limits = snapshot.val();
-                if (limits) {
-                    userLimits = limits;
-                } else {
-                    // Set default limits
-                    userLimits = {
-                        maxChatsPerDay: 10,
-                        maxMessagesPerChat: 7
-                    };
-                    database.ref(`userLimits/${currentUser.uid}`).set(userLimits);
-                }
-            });
-        }
-
-        function updateUserLimits(userId, limits) {
-            if (currentUser.email === '123@gmail.com') {
-                database.ref(`userLimits/${userId}`).set(limits);
-            }
         }
 
         // Event Listeners
@@ -1340,105 +868,18 @@
             document.getElementById('searchChats').addEventListener('input', filterChats);
             document.getElementById('mobileSearchChats').addEventListener('input', filterChats);
 
-            // Tools functionality
-            elements.toolsButton.addEventListener('click', toggleToolsMenu);
-            elements.fileOption.addEventListener('click', () => {
-                elements.codeFileInput.click();
-                toggleToolsMenu();
-            });
-            elements.codeFileInput.addEventListener('change', handleFileUpload);
-            elements.removeFile.addEventListener('click', removeUploadedFile);
-
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#chatMenuBtn') && !e.target.closest('#chatDropdown')) {
                     elements.chatDropdown.classList.remove('active');
                 }
-                if (!e.target.closest('#toolsButton') && !e.target.closest('#toolsMenu')) {
-                    elements.toolsMenu.classList.remove('active');
-                }
             });
-        }
-
-        // File Upload Functions
-        function toggleToolsMenu() {
-            elements.toolsMenu.classList.toggle('active');
-            
-            if (elements.toolsMenu.classList.contains('active') && typeof gsap !== 'undefined') {
-                gsap.from(elements.toolsMenu, {duration: 0.2, scale: 0.8, opacity: 0});
-            }
-        }
-
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            // Check daily limit
-            if (dailyFileUploads >= maxDailyFiles) {
-                showFileLimitBanner();
-                event.target.value = '';
-                return;
-            }
-
-            // Check file type
-            const allowedExtensions = ['.js', '.html', '.css', '.py', '.java', '.cpp', '.c', '.php', '.rb', '.go', '.rs', '.ts', '.jsx', '.vue', '.swift', '.kt', '.scala', '.r', '.sql', '.json', '.xml', '.yaml', '.yml'];
-            const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-            
-            if (!allowedExtensions.includes(fileExtension)) {
-                alert('Please upload a valid code file');
-                event.target.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                currentUploadedFile = {
-                    name: file.name,
-                    content: e.target.result,
-                    type: fileExtension
-                };
-                
-                elements.fileName.textContent = file.name;
-                elements.fileStatus.classList.remove('hidden');
-                
-                // Update daily count
-                dailyFileUploads++;
-                saveUserPreferences();
-                
-                if (typeof gsap !== 'undefined') {
-                    gsap.from(elements.fileStatus, {duration: 0.3, y: -10, opacity: 0});
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function removeUploadedFile() {
-            currentUploadedFile = null;
-            elements.fileStatus.classList.add('hidden');
-            elements.codeFileInput.value = '';
-            
-            if (typeof gsap !== 'undefined') {
-                gsap.to(elements.fileStatus, {duration: 0.2, y: -10, opacity: 0, onComplete: () => {
-                    elements.fileStatus.classList.add('hidden');
-                }});
-            }
-        }
-
-        function showFileLimitBanner() {
-            elements.fileLimitBanner.classList.remove('hidden');
-            setTimeout(() => {
-                elements.fileLimitBanner.classList.add('hidden');
-            }, 5000);
         }
 
         // Mobile Sidebar Functions
         function openMobileSidebar() {
             elements.mobileSidebar.classList.add('open');
             elements.mobileOverlay.classList.add('active');
-            
-            if (typeof gsap !== 'undefined') {
-                gsap.from(elements.mobileSidebar, {duration: 0.3, x: -320});
-            }
         }
 
         function closeMobileSidebar() {
@@ -1527,55 +968,7 @@
                     elements.mobileUserPhoto.classList.add('hidden');
                     elements.mobileUserInitial.style.display = 'flex';
                 }
-
-                // Show admin panel if user is admin
-                if (currentUser.email === '123@gmail.com') {
-                    elements.adminPanel.classList.remove('hidden');
-                    loadAllUsers();
-                }
             }
-        }
-
-        // Admin Functions
-        function loadAllUsers() {
-            database.ref('users').on('value', (snapshot) => {
-                const users = snapshot.val() || {};
-                updateUserManagementUI(users);
-            });
-        }
-
-        function updateUserManagementUI(users) {
-            const container = elements.userManagement;
-            container.innerHTML = '';
-
-            Object.keys(users).forEach(userId => {
-                const user = users[userId];
-                const userCard = document.createElement('div');
-                userCard.className = 'user-management-card animate-slide-up';
-                
-                userCard.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-medium">${user.email || 'Unknown User'}</span>
-                        <span class="text-xs text-gray-400">${userId.substring(0, 8)}...</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm">
-                        <label>Daily Chats:</label>
-                        <input type="number" class="admin-input" value="${userLimits[userId]?.maxChatsPerDay || 10}" 
-                               onchange="updateUserLimit('${userId}', 'maxChatsPerDay', this.value)" min="1" max="50">
-                        <label>Messages/Chat:</label>
-                        <input type="number" class="admin-input" value="${userLimits[userId]?.maxMessagesPerChat || 7}" 
-                               onchange="updateUserLimit('${userId}', 'maxMessagesPerChat', this.value)" min="1" max="20">
-                    </div>
-                `;
-                
-                container.appendChild(userCard);
-            });
-        }
-
-        function updateUserLimit(userId, limitType, value) {
-            const currentLimits = userLimits[userId] || { maxChatsPerDay: 10, maxMessagesPerChat: 7 };
-            currentLimits[limitType] = parseInt(value);
-            updateUserLimits(userId, currentLimits);
         }
 
         // Chat management
@@ -1585,9 +978,6 @@
             messageCount = 0;
             isChessConversation = false;
             chessGameData = null;
-            currentUploadedFile = null;
-            elements.fileStatus.classList.add('hidden');
-            elements.codeFileInput.value = '';
             updateMessageCount();
             hideWarningBanner();
             
@@ -1597,11 +987,11 @@
             elements.chatAvatar.className = 'w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-sm font-bold';
             
             elements.messagesContainer.innerHTML = `
-                <div class="text-center text-gray-500 mt-8" data-aos="fade-up">
+                <div class="text-center text-gray-500 mt-8">
                     <div class="logo-placeholder mx-auto mb-4 pulse">AI</div>
                     <h3 class="text-lg font-medium mb-1">New Conversation</h3>
                     <p class="text-sm">How can I help you today?</p>
-                    <p class="text-xs text-gray-600 mt-2">You can send up to ${userLimits.maxMessagesPerChat || 7} messages per chat</p>
+                    <p class="text-xs text-gray-600 mt-2">You can send up to 7 messages per chat</p>
                 </div>
             `;
             elements.messageInput.focus();
@@ -1610,39 +1000,36 @@
         }
 
         function startChessConversation() {
-            // Load chess libraries first
-            loadChessLibraries(() => {
-                currentChatId = generateChatId();
-                conversationHistory = [];
-                messageCount = 0;
-                isChessConversation = true;
-                initializeChess();
-                updateMessageCount();
-                hideWarningBanner();
-                
-                // Set chess chat appearance
-                elements.chatTitle.textContent = 'Chess Master';
-                elements.chatAvatar.innerHTML = '♗';
-                elements.chatAvatar.className = 'w-8 h-8 chess-conversation rounded-full flex items-center justify-center text-sm font-bold text-white';
-                
-                elements.messagesContainer.innerHTML = `
-                    <div class="text-center text-gray-500 mt-8" data-aos="fade-up">
-                        <div class="w-12 h-12 chess-conversation rounded-full flex items-center justify-center text-2xl mx-auto mb-4">♗</div>
-                        <h3 class="text-lg font-medium mb-1">Chess Master</h3>
-                        <p class="text-sm">Ready for a strategic chess battle?</p>
-                        <p class="text-xs text-gray-600 mt-2">Let's play some chess!</p>
-                    </div>
-                `;
-                
-                // Add initial chess message
-                setTimeout(() => {
-                    addMessage("Welcome to Chess Master! I'm excited to play chess with you. Would you like to start a game? Just say 'yes' or 'let's play' to begin our match!", 'assistant');
-                }, 500);
-                
-                elements.messageInput.focus();
-                elements.sendBtn.disabled = false;
-                elements.messageInput.disabled = false;
-            });
+            currentChatId = generateChatId();
+            conversationHistory = [];
+            messageCount = 0;
+            isChessConversation = true;
+            initializeChess();
+            updateMessageCount();
+            hideWarningBanner();
+            
+            // Set chess chat appearance
+            elements.chatTitle.textContent = 'Chess Master';
+            elements.chatAvatar.innerHTML = '♗';
+            elements.chatAvatar.className = 'w-8 h-8 chess-conversation rounded-full flex items-center justify-center text-sm font-bold text-white';
+            
+            elements.messagesContainer.innerHTML = `
+                <div class="text-center text-gray-500 mt-8">
+                    <div class="w-12 h-12 chess-conversation rounded-full flex items-center justify-center text-2xl mx-auto mb-4">♗</div>
+                    <h3 class="text-lg font-medium mb-1">Chess Master</h3>
+                    <p class="text-sm">Ready for a strategic chess battle?</p>
+                    <p class="text-xs text-gray-600 mt-2">Let's play some chess!</p>
+                </div>
+            `;
+            
+            // Add initial chess message
+            setTimeout(() => {
+                addMessage("Welcome to Chess Master! I'm excited to play chess with you. Would you like to start a game? Just say 'yes' or 'let's play' to begin our match!", 'assistant');
+            }, 500);
+            
+            elements.messageInput.focus();
+            elements.sendBtn.disabled = false;
+            elements.messageInput.disabled = false;
         }
 
         function generateChatId() {
@@ -1650,11 +1037,9 @@
         }
 
         function updateMessageCount() {
-            const maxMessages = userLimits.maxMessagesPerChat || 7;
-            elements.messageCount.textContent = `${messageCount}/${maxMessages}`;
-            elements.mobileMessageCount.textContent = `${messageCount}/${maxMessages}`;
-            
-            if (messageCount >= maxMessages) {
+            elements.messageCount.textContent = `${messageCount}/7`;
+            elements.mobileMessageCount.textContent = `${messageCount}/7`;
+            if (messageCount >= 7) {
                 showWarningBanner();
                 elements.sendBtn.disabled = true;
                 elements.messageInput.disabled = true;
@@ -1669,12 +1054,10 @@
             elements.warningBanner.classList.add('hidden');
         }
 
-        // Enhanced Message handling with code highlighting and rich content
+        // Message handling with conversational context
         async function sendMessage() {
             const message = elements.messageInput.value.trim();
-            const maxMessages = userLimits.maxMessagesPerChat || 7;
-            
-            if (!message || messageCount >= maxMessages) return;
+            if (!message || messageCount >= 7) return;
 
             // Disable input
             elements.messageInput.disabled = true;
@@ -1687,27 +1070,17 @@
             updateMessageCount();
 
             // Add to conversation history
-            let userContent = message;
-            if (currentUploadedFile) {
-                userContent += `\n\nUploaded file (${currentUploadedFile.name}):\n\`\`\`${currentUploadedFile.type.substring(1)}\n${currentUploadedFile.content}\n\`\`\``;
-            }
-            
-            conversationHistory.push({ role: 'user', content: userContent });
+            conversationHistory.push({ role: 'user', content: message });
 
-            // Handle different conversation types
+            // Handle chess conversation
             if (isChessConversation) {
                 await handleChessMessage(message);
             } else {
                 await handleRegularMessage();
             }
 
-            // Clear uploaded file after sending
-            if (currentUploadedFile) {
-                removeUploadedFile();
-            }
-
             // Re-enable input if under limit
-            if (messageCount < maxMessages) {
+            if (messageCount < 7) {
                 elements.messageInput.disabled = false;
                 elements.sendBtn.disabled = false;
                 elements.messageInput.focus();
@@ -1727,26 +1100,43 @@
                 const chessHTML = createChessBoard();
                 addMessage("Excellent! Let's start our chess match. You're playing as white, so you make the first move. Click and drag the pieces or click to select and then click the destination square. Good luck!", 'assistant', chessHTML);
                 
+                // Add to conversation history
                 conversationHistory.push({ role: 'assistant', content: "Let's play chess! You're white, make your move." });
                 saveChatToHistory();
                 return;
             }
 
+            // Show typing indicator
             showTypingIndicator();
 
             try {
+                // Prepare chess-specific system prompt
                 const systemPrompt = {
                     role: "system",
-                    content: `You are Chess Master, an enthusiastic chess AI. You love chess and are always encouraging players. You can discuss chess strategies, famous games, and provide tips. You often ask if users want to play chess games with you. When users seem interested in chess, encourage them to play a match. Be friendly and supportive about chess gameplay. Use emojis appropriately and format responses with proper headings when discussing chess concepts.`
+                    content: `You are Chess Master, an enthusiastic chess AI. You love chess and are always encouraging players. You can discuss chess strategies, famous games, and provide tips. You often ask if users want to play chess games with you. When users seem interested in chess, encourage them to play a match. Be friendly and supportive about chess gameplay.`
                 };
 
                 const messagesToSend = [systemPrompt, ...conversationHistory];
-                const response = await queryAI(messagesToSend, 'chess');
-                
+
+                // Send to AI
+                const response = await fetch(`${SERVER_BASE}/api/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: messagesToSend,
+                        max_tokens: 2048,
+                        temperature: 0.8
+                    })
+                });
+
+                const data = await response.json();
                 hideTypingIndicator();
-                if (response.replyText) {
-                    addMessage(response.replyText, 'assistant');
-                    conversationHistory.push({ role: 'assistant', content: response.replyText });
+
+                if (data.replyText) {
+                    addMessage(data.replyText, 'assistant');
+                    conversationHistory.push({ role: 'assistant', content: data.replyText });
                     saveChatToHistory();
                 } else {
                     addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
@@ -1759,18 +1149,15 @@
         }
 
         async function handleRegularMessage() {
+            // Show typing indicator
             showTypingIndicator();
 
             try {
+                // Check if chess plugin is enabled and message is chess-related
                 let systemPrompt = {
                     role: "system",
-                    content: "You are AiVA, a helpful AI assistant. Provide detailed, well-formatted responses. Use proper markdown formatting with headings (# ## ###), **bold text**, *italics*, bullet points, and code blocks when appropriate. When showing data, create tables or suggest charts if relevant. Use emojis naturally to enhance communication. Always format your responses professionally with clear structure."
+                    content: "You are AiVA, a helpful AI assistant. Maintain conversational context and provide detailed, helpful responses. Remember previous messages in this conversation."
                 };
-
-                // Add file context if provided
-                if (currentUploadedFile) {
-                    systemPrompt.content += ` The user has uploaded a code file (${currentUploadedFile.name}). Analyze the code and provide helpful insights, suggestions, or explanations about the uploaded file.`;
-                }
 
                 if (enabledPlugins.chess) {
                     const message = conversationHistory[conversationHistory.length - 1].content.toLowerCase();
@@ -1780,12 +1167,26 @@
                 }
 
                 const messagesToSend = [systemPrompt, ...conversationHistory];
-                const response = await queryAI(messagesToSend, 'regular');
-                
+
+                // Send to AI
+                const response = await fetch(`${SERVER_BASE}/api/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: messagesToSend,
+                        max_tokens: 2048,
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await response.json();
                 hideTypingIndicator();
-                if (response.replyText) {
-                    await processAIResponse(response.replyText);
-                    conversationHistory.push({ role: 'assistant', content: response.replyText });
+
+                if (data.replyText) {
+                    addMessage(data.replyText, 'assistant');
+                    conversationHistory.push({ role: 'assistant', content: data.replyText });
                     saveChatToHistory();
                 } else {
                     addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
@@ -1797,339 +1198,30 @@
             }
         }
 
-        // AI Query Function
-        async function queryAI(messages, conversationType = 'regular') {
-            const response = await fetch(`${SERVER_BASE}/api/query`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    messages: messages,
-                    conversationType: conversationType,
-                    max_tokens: 2048,
-                    temperature: conversationType === 'chess' ? 0.8 : 0.7
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            return await response.json();
-        }
-
-        // Process AI Response with rich content
-        async function processAIResponse(content) {
-            // Check if response contains data that can be visualized
-            if (shouldCreateChart(content)) {
-                const chartData = extractChartData(content);
-                if (chartData) {
-                    await loadChartLibrary();
-                    createChart(chartData);
-                    return;
-                }
-            }
-
-            // Check if response contains tabular data
-            if (shouldCreateTable(content)) {
-                const tableData = extractTableData(content);
-                if (tableData) {
-                    await loadTabulatorLibrary();
-                    createComparisonTable(tableData);
-                    return;
-                }
-            }
-
-            // Regular message processing
-            addMessage(content, 'assistant');
-        }
-
-        // Chart Detection and Creation
-        function shouldCreateChart(content) {
-            const chartKeywords = ['chart', 'graph', 'data', 'statistics', 'percentage', 'comparison', 'trend', 'analysis'];
-            const lowerContent = content.toLowerCase();
-            return chartKeywords.some(keyword => lowerContent.includes(keyword)) && 
-                   (content.includes('%') || /\d+/.test(content));
-        }
-
-        function extractChartData(content) {
-            // Simple data extraction for demonstration
-            const lines = content.split('\n');
-            const data = [];
-            const labels = [];
-            
-            lines.forEach(line => {
-                const match = line.match(/(.+?):\s*(\d+(?:\.\d+)?)/);
-                if (match) {
-                    labels.push(match[1].trim());
-                    data.push(parseFloat(match[2]));
-                }
-            });
-            
-            if (data.length > 1) {
-                return { labels, data, type: 'bar' };
-            }
-            return null;
-        }
-
-        async function createChart(chartData) {
-            const chartContainer = document.createElement('div');
-            chartContainer.className = 'chart-container animate-slide-up';
-            chartContainer.innerHTML = `
-                <div class="chart-title">${chartData.title || 'Data Visualization'}</div>
-                <canvas id="aiChart_${Date.now()}" width="400" height="200"></canvas>
-            `;
-            
-            addMessageElement(chartContainer);
-            
-            const canvas = chartContainer.querySelector('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            new Chart(ctx, {
-                type: chartData.type,
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        data: chartData.data,
-                        backgroundColor: [
-                            '#667eea', '#764ba2', '#f093fb', '#f5576c',
-                            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
-                        ],
-                        borderColor: '#374151',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: chartData.type === 'pie',
-                            labels: { color: '#e5e7eb' }
-                        }
-                    },
-                    scales: chartData.type !== 'pie' ? {
-                        y: {
-                            ticks: { color: '#9ca3af' },
-                            grid: { color: '#374151' }
-                        },
-                        x: {
-                            ticks: { color: '#9ca3af' },
-                            grid: { color: '#374151' }
-                        }
-                    } : {}
-                }
-            });
-        }
-
-        // Table Detection and Creation
-        function shouldCreateTable(content) {
-            const tableKeywords = ['comparison', 'versus', 'vs', 'compare', 'table', 'features'];
-            const lowerContent = content.toLowerCase();
-            return tableKeywords.some(keyword => lowerContent.includes(keyword)) && 
-                   content.includes('|');
-        }
-
-        function extractTableData(content) {
-            const lines = content.split('\n').filter(line => line.includes('|'));
-            if (lines.length < 2) return null;
-            
-            const headers = lines[0].split('|').map(h => h.trim()).filter(h => h);
-            const rows = lines.slice(1).map(line => 
-                line.split('|').map(cell => cell.trim()).filter(cell => cell)
-            ).filter(row => row.length > 1);
-            
-            return { headers, rows };
-        }
-
-        async function createComparisonTable(tableData) {
-            const tableContainer = document.createElement('div');
-            tableContainer.className = 'comparison-table animate-slide-up';
-            tableContainer.id = `table_${Date.now()}`;
-            
-            addMessageElement(tableContainer);
-            
-            new Tabulator(tableContainer, {
-                data: tableData.rows.map(row => {
-                    const obj = {};
-                    tableData.headers.forEach((header, index) => {
-                        obj[header] = row[index] || '';
-                    });
-                    return obj;
-                }),
-                columns: tableData.headers.map(header => ({
-                    title: header,
-                    field: header,
-                    headerFilter: "input"
-                })),
-                layout: "fitColumns",
-                theme: "midnight"
-            });
-        }
-
         function addMessage(content, sender, htmlContent = null) {
-            if (sender === 'assistant') {
-                // Load Prism for code highlighting when needed
-                if (content.includes('```')) {
-                    loadPrismLibrary(() => {
-                        addFormattedMessage(content, sender, htmlContent);
-                    });
-                } else {
-                    addFormattedMessage(content, sender, htmlContent);
-                }
-            } else {
-                addFormattedMessage(content, sender, htmlContent);
-            }
-        }
-
-
-        function addFormattedMessage(content, sender, htmlContent = null) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `fade-in animate-slide-up ${sender === 'user' ? 'flex justify-end mb-4' : 'mb-4'}`;
+            messageDiv.className = `fade-in ${sender === 'user' ? 'flex justify-end' : 'flex justify-start'}`;
             
-            if (sender === 'user') {
-                messageDiv.innerHTML = `
-                    <div class="bg-blue-600 ml-12 p-3 rounded-lg max-w-full">
-                        <div class="text-sm">${formatMessage(content)}</div>
-                        <div class="text-xs opacity-70 mt-1">${new Date().toLocaleTimeString()}</div>
-                    </div>
-                `;
-            } else {
-                // AI message - no background, direct content
-                const processedContent = htmlContent || formatAIMessage(content);
-                messageDiv.innerHTML = `
-                    <div class="ai-message">
-                        <div class="message-content">${processedContent}</div>
-                        <div class="text-xs text-gray-500 mt-2">${new Date().toLocaleTimeString()}</div>
-                    </div>
-                `;
-            }
+            const isUser = sender === 'user';
+            const bgColor = isUser ? 'bg-blue-600' : 'bg-gray-700';
+            const alignment = isUser ? 'ml-12' : 'mr-12';
 
-            addMessageElement(messageDiv);
-        }
+            // Process content for code blocks and formatting
+            const processedContent = htmlContent || formatMessage(content);
 
-        function addMessageElement(element) {
+            messageDiv.innerHTML = `
+                <div class="${bgColor} ${alignment} p-3 rounded-lg max-w-full">
+                    <div class="text-sm">${processedContent}</div>
+                    <div class="text-xs opacity-70 mt-1">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+
             // Clear welcome message if it exists
             const welcomeMsg = elements.messagesContainer.querySelector('.text-center');
             if (welcomeMsg) welcomeMsg.remove();
 
-            elements.messagesContainer.appendChild(element);
+            elements.messagesContainer.appendChild(messageDiv);
             elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
-
-            // Animate if GSAP is available
-            if (typeof gsap !== 'undefined') {
-                gsap.from(element, {duration: 0.3, y: 20, opacity: 0});
-            }
-
-            // Highlight code blocks if Prism is available
-            if (typeof Prism !== 'undefined') {
-                Prism.highlightAllUnder(element);
-            }
-        }
-
-        function formatAIMessage(content) {
-            let formatted = content;
-
-            // Convert markdown headers
-            formatted = formatted.replace(/### (.*$)/gim, '<h3>$1</h3>');
-            formatted = formatted.replace(/## (.*$)/gim, '<h2>$1</h2>');
-            formatted = formatted.replace(/# (.*$)/gim, '<h1>$1</h1>');
-
-            // Convert bold and italic
-            formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-            // Convert code blocks
-            formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-                return createCodeBlock(code.trim(), lang);
-            });
-
-            // Convert inline code
-            formatted = formatted.replace(/`([^`]+)`/g, '<code class="bg-gray-800 px-2 py-1 rounded text-sm">$1</code>');
-
-            // Convert line breaks
-            formatted = formatted.replace(/\n/g, '<br>');
-
-            // Convert bullet points
-            formatted = formatted.replace(/^\- (.*)$/gm, '<li>$1</li>');
-            formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul class="list-disc pl-5 my-2">$1</ul>');
-
-            return formatted;
-        }
-
-        function createCodeBlock(code, language = '') {
-            const codeId = 'code_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            const lang = language || detectLanguage(code);
-            const displayLang = getLanguageDisplayName(lang);
-
-            return `
-                <div class="code-container">
-                    <div class="code-header">
-                        <span class="code-language">${displayLang}</span>
-                        <button class="code-copy-btn" onclick="copyCode('${codeId}')">
-                            <span class="copy-text">Copy Code</span>
-                        </button>
-                    </div>
-                    <pre class="language-${lang}"><code id="${codeId}">${escapeHtml(code)}</code></pre>
-                </div>
-            `;
-        }
-
-        function detectLanguage(code) {
-            if (code.includes('function') && code.includes('{')) return 'javascript';
-            if (code.includes('def ') && code.includes(':')) return 'python';
-            if (code.includes('public class')) return 'java';
-            if (code.includes('#include') || code.includes('int main')) return 'cpp';
-            if (code.includes('<?php')) return 'php';
-            if (code.includes('<html') || code.includes('<!DOCTYPE')) return 'html';
-            if (code.includes('body {') || code.includes('.class')) return 'css';
-            return 'text';
-        }
-
-        function getLanguageDisplayName(lang) {
-            const names = {
-                'javascript': 'JavaScript',
-                'python': 'Python',
-                'java': 'Java',
-                'cpp': 'C++',
-                'c': 'C',
-                'php': 'PHP',
-                'html': 'HTML',
-                'css': 'CSS',
-                'typescript': 'TypeScript',
-                'jsx': 'JSX',
-                'sql': 'SQL',
-                'json': 'JSON',
-                'go': 'Go',
-                'rust': 'Rust',
-                'text': 'Text'
-            };
-            return names[lang] || lang.toUpperCase();
-        }
-
-        // Copy code functionality
-        async function copyCode(codeId) {
-            const codeElement = document.getElementById(codeId);
-            if (!codeElement) return;
-
-            const button = codeElement.closest('.code-container').querySelector('.code-copy-btn');
-            const copyText = button.querySelector('.copy-text');
-
-            try {
-                await navigator.clipboard.writeText(codeElement.textContent);
-                copyText.textContent = 'Copied!';
-                button.classList.add('copied');
-                
-                setTimeout(() => {
-                    copyText.textContent = 'Copy Code';
-                    button.classList.remove('copied');
-                }, 2000);
-            } catch (err) {
-                copyText.textContent = 'Failed';
-                setTimeout(() => {
-                    copyText.textContent = 'Copy Code';
-                }, 2000);
-            }
         }
 
         function formatMessage(content) {
@@ -2154,9 +1246,9 @@
         function showTypingIndicator() {
             const typingDiv = document.createElement('div');
             typingDiv.id = 'typingIndicator';
-            typingDiv.className = 'flex justify-start fade-in animate-slide-up';
+            typingDiv.className = 'flex justify-start fade-in';
             typingDiv.innerHTML = `
-                <div class="p-3">
+                <div class="bg-gray-700 mr-12 p-3 rounded-lg">
                     <div class="typing-indicator">
                         <div class="typing-dot"></div>
                         <div class="typing-dot"></div>
@@ -2240,7 +1332,7 @@
 
         function createChatItem(chat) {
             const chatItem = document.createElement('div');
-            chatItem.className = `p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors animate-slide-up ${
+            chatItem.className = `p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors ${
                 chat.id === currentChatId ? 'bg-gray-700' : 'bg-gray-800'
             }`;
             
@@ -2255,13 +1347,9 @@
                 </div>
                 <div class="text-xs text-gray-400 flex justify-between">
                     <span>${new Date(chat.timestamp).toLocaleDateString()}</span>
-                    <span>${chat.messageCount || 0}/${userLimits.maxMessagesPerChat || 7}</span>
+                    <span>${chat.messageCount || 0}/7</span>
                 </div>
             `;
-            
-            if (typeof gsap !== 'undefined') {
-                gsap.from(chatItem, {duration: 0.2, x: -20, opacity: 0});
-            }
             
             return chatItem;
         }
@@ -2390,7 +1478,7 @@
 
             archived.forEach(chat => {
                 const chatItem = document.createElement('div');
-                chatItem.className = 'p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors bg-gray-800 animate-slide-up';
+                chatItem.className = 'p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors bg-gray-800';
                 
                 const isChess = chat.isChessConversation;
                 const icon = isChess ? '♗' : '';
@@ -2459,6 +1547,10 @@
                 document.getElementById(`${pluginName}Badge`).className = 'plugin-enabled-badge';
                 document.getElementById(`${pluginName}Plugin`).classList.add('enabled');
                 document.getElementById(`${pluginName}ToggleText`).textContent = 'Disable Plugin';
+                
+                if (pluginName === 'chess') {
+                    initializeChess();
+                }
             }
             
             saveUserPreferences();
@@ -2507,7 +1599,7 @@
 
         function createEnabledPluginItem(pluginName) {
             const item = document.createElement('div');
-            item.className = 'enabled-plugin-item animate-slide-up';
+            item.className = 'enabled-plugin-item';
             
             let icon, title;
             switch(pluginName) {
@@ -2537,7 +1629,7 @@
             elements.settingsModal.classList.add('hidden');
         }
 
-        // Chess Functions - Complete Implementation
+        // Chess Functions (Complete Chess Engine Code)
         function initializeChess() {
             if (typeof Chess === 'undefined') {
                 console.warn('Chess library not loaded');
@@ -2548,7 +1640,7 @@
             });
         }
 
-        // Chess piece resolution
+        // Chess piece resolution code
         function loadImage(url) { 
             return new Promise(function(resolve, reject) { 
                 var img = new Image(); 
@@ -2594,6 +1686,7 @@
             for (var k2 in pieceImgResolved) 
                 if (!pieceImgResolved[k2]) 
                     pieceImgResolved[k2] = defaultAny;
+            console.log('Resolved pieces:', pieceImgResolved);
             return pieceImgResolved;
         }
 
@@ -2878,6 +1971,7 @@
                 $(`#${boardId} .chessboard-js-piece`).css('transition', 'top 0.25s, left 0.25s'); 
             }, 1000);
 
+            // Add click handlers
             setupChessClickHandlers(boardId, pgnId);
         }
 
@@ -2964,6 +2058,7 @@
                 clearChessHighlights(boardId);
                 selectedSquare = null;
 
+                // Update PGN table
                 updatePGNTable(move, pgnId);
 
                 await new Promise(r => setTimeout(r, 300));
@@ -2982,10 +2077,12 @@
                 if (aiMode === 'stockfish' && stockfishEngine && engineReady) {
                     try {
                         var fen = chessGame.fen();
+                        console.log('Requesting SF bestmove for fen:', fen);
                         var best = await stockfishBestMove(fen, stockfishMovetime).catch(function(e) { 
                             console.warn('SF query failed:', e); 
                             return null; 
                         });
+                        console.log('Stockfish answered bestmove:', best);
 
                         if (best && best !== '(none)') {
                             var from = best.slice(0, 2);
@@ -3010,6 +2107,7 @@
                             }
 
                             if (matched) {
+                                console.log('Applying SF move (validated):', matched);
                                 var botMove = chessGame.move({ 
                                     from: matched.from, 
                                     to: matched.to, 
@@ -3029,8 +2127,14 @@
                                         handleGameEnd(pgnId);
                                     }
                                     return;
+                                } else {
+                                    console.warn('game.move returned null despite matched legal move:', matched);
                                 }
+                            } else {
+                                console.warn('Stockfish suggested move not found in legal moves:', best);
                             }
+                        } else {
+                            console.warn('Stockfish returned no usable bestmove:', best);
                         }
                     } catch (e) {
                         console.warn('Stockfish error during move apply -> fallback to minimax', e);
@@ -3052,6 +2156,8 @@
                         if (chessGame.game_over()) {
                             handleGameEnd(pgnId);
                         }
+                    } else {
+                        console.warn('Minimax did not return move — position may be terminal.');
                     }
                 }
 
@@ -3066,8 +2172,10 @@
             const pgnBody = document.getElementById(pgnId);
             if (!pgnBody) return;
 
+            // Clear existing content
             pgnBody.innerHTML = '';
 
+            // Group moves in pairs (white, black)
             for (let i = 0; i < pgn_moves.length; i += 2) {
                 const moveNumber = Math.floor(i / 2) + 1;
                 const whiteMove = pgn_moves[i];
@@ -3093,18 +2201,19 @@
                     gameResult = `Game Over - ${winner} wins by checkmate!`;
                     
                     if (winner === 'White') {
-                        analysis = "🎉 Congratulations! You played brilliantly and achieved checkmate. That was a fantastic game! Your strategic thinking really showed in those final moves.";
+                        analysis = "Congratulations! You played brilliantly and achieved checkmate. That was a fantastic game! Your strategic thinking really showed in those final moves. I was impressed by your tactical awareness.";
                     } else {
-                        analysis = "♟️ Great game! Even though I managed to get checkmate this time, you played very well and put up strong resistance. Your middle game moves were quite good.";
+                        analysis = "Great game! Even though I managed to get checkmate this time, you played very well and put up strong resistance. I particularly liked some of your middle game moves - they really made me think carefully about my strategy.";
                     }
                 } else if (chessGame.in_stalemate()) {
                     gameResult = 'Game Over - Stalemate! It\'s a draw.';
-                    analysis = "🤝 What an interesting game that ended in stalemate! That's actually quite a sophisticated outcome. You managed the endgame well to achieve this draw.";
+                    analysis = "What an interesting game that ended in stalemate! That's actually quite a sophisticated outcome. You managed the endgame well to achieve this draw. Stalemate can be a great defensive resource!";
                 } else if (chessGame.in_draw()) {
                     gameResult = 'Game Over - Draw!';
-                    analysis = "⚖️ A well-fought draw! Both sides played solidly. These kinds of balanced games really show good positional understanding from both players.";
+                    analysis = "A well-fought draw! Both sides played solidly. These kinds of balanced games really show good positional understanding from both players. Well done!";
                 }
 
+                // Add result to PGN table
                 const pgnBody = document.getElementById(pgnId);
                 if (pgnBody) {
                     const resultRow = document.createElement('tr');
@@ -3112,6 +2221,7 @@
                     pgnBody.appendChild(resultRow);
                 }
 
+                // Send analysis message
                 setTimeout(() => {
                     addMessage(analysis, 'assistant');
                     conversationHistory.push({ role: 'assistant', content: analysis });
@@ -3168,25 +2278,9 @@
         window.unarchiveChat = unarchiveChat;
         window.deleteArchivedChat = deleteArchivedChat;
         window.togglePlugin = togglePlugin;
-        window.copyCode = copyCode;
-        window.updateUserLimit = updateUserLimit;
 
         // Initialize app when DOM is loaded
         document.addEventListener('DOMContentLoaded', initApp);
-
-        // Initialize animations on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                if (typeof AOS !== 'undefined') {
-                    AOS.init({
-                        duration: 800,
-                        easing: 'ease-in-out',
-                        once: true,
-                        offset: 100
-                    });
-                }
-            }, 1000);
-        });
     </script>
 </body>
-</html>
+    </html>
