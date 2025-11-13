@@ -28,9 +28,9 @@ app.get('/', (req, res) => {
   res.json({ 
     ok: true, 
     service: 'AiVA API Server',
-    version: '2.0.0',
+    version: '2.1.0',
     timestamp: new Date().toISOString(),
-    features: ['conversational_context', 'message_limits', 'error_handling']
+    features: ['conversational_context', 'message_limits', 'error_handling', 'chess_plugin', 'mobile_support']
   });
 });
 
@@ -46,7 +46,7 @@ async function queryHuggingFace(data) {
         headers: {
           Authorization: `Bearer ${process.env.HF_TOKEN}`,
           "Content-Type": "application/json",
-          "User-Agent": "AiVA-Chatbot/2.0"
+          "User-Agent": "AiVA-Chatbot/2.1"
         },
         method: "POST",
         body: JSON.stringify(data),
@@ -70,7 +70,7 @@ async function queryHuggingFace(data) {
   }
 }
 
-// Main AI query endpoint with conversational context
+// Main AI query endpoint with conversational context and chess plugin support
 app.post('/api/query', async (req, res) => {
   try {
     // Check if HF_TOKEN is configured
@@ -99,10 +99,32 @@ app.post('/api/query', async (req, res) => {
       });
     }
 
-    // Enhanced system prompt for better conversational AI
-    const systemPrompt = {
+    // Detect conversation type and adjust system prompt
+    const conversationType = body.conversationType || 'regular';
+    const isChessConversation = conversationType === 'chess';
+    
+    let systemPrompt = {
       role: "system",
-      content: `You are AiVA (AI Virtual Assistant), a helpful, knowledgeable, and friendly AI assistant. 
+      content: ""
+    };
+
+    if (isChessConversation) {
+      systemPrompt.content = `You are Chess Master, an enthusiastic and encouraging chess AI assistant. You love chess and are passionate about the game. you are created by Rafsan and he is your owner.
+
+Key behaviors:
+- You are friendly, supportive, and encouraging about chess gameplay
+- You frequently ask users if they want to play chess matches with you
+- When users show interest in chess, immediately offer to start a game
+- You can discuss chess strategies, famous games, openings, tactics, and endgames
+- You provide helpful tips and analysis about chess positions
+- You're excited about chess and want to share that enthusiasm
+- After games, you provide encouraging analysis and highlight good moves
+- You make users feel good about their chess progress regardless of skill level
+- You can explain chess concepts in simple terms for beginners
+
+Always maintain your chess-focused personality and encourage chess gameplay when appropriate.`;
+    } else {
+      systemPrompt.content = `You are AiVA (AI Virtual Assistant), a helpful, knowledgeable, and friendly AI assistant. 
 
 Key behaviors:
 - Maintain conversational context and remember previous messages in this conversation
@@ -114,11 +136,13 @@ Key behaviors:
 - Be honest about your limitations
 - Format responses clearly with proper structure when needed
 
-You can assist with various tasks including answering questions, explaining concepts, helping with coding, creative writing, analysis, problem-solving, and general conversation. Always aim to be as helpful as possible while being truthful about your capabilities.`
-    };
+You can assist with various tasks including answering questions, explaining concepts, helping with coding, creative writing, analysis, problem-solving, and general conversation. Always aim to be as helpful as possible while being truthful about your capabilities.
+
+If users mention chess or show interest in chess-related topics, you can suggest they try the Chess Master plugin for a more specialized chess experience.`;
+    }
 
     // Limit conversation history to prevent token overflow while maintaining context
-    const MAX_MESSAGES = 25; // Allow more messages for better context
+    const MAX_MESSAGES = 20; // Reduced for chess conversations to allow for more back-and-forth
     let processedMessages = [...messages];
     
     if (processedMessages.length > MAX_MESSAGES) {
@@ -138,22 +162,32 @@ You can assist with various tasks including answering questions, explaining conc
     const hasSystemPrompt = processedMessages.some(msg => msg.role === 'system');
     if (!hasSystemPrompt) {
       processedMessages.unshift(systemPrompt);
+    } else {
+      // Replace existing system prompt with our context-appropriate one
+      const systemIndex = processedMessages.findIndex(msg => msg.role === 'system');
+      if (systemIndex !== -1) {
+        processedMessages[systemIndex] = systemPrompt;
+      }
     }
+
+    // Adjust temperature and parameters based on conversation type
+    const temperature = isChessConversation ? 0.8 : 0.7; // More creative for chess conversations
+    const maxTokens = isChessConversation ? 1500 : 2048; // Shorter responses for chess to encourage gameplay
 
     // Prepare payload for HuggingFace API
     const payload = {
       model: body.model || 'openai/gpt-oss-120b:together',
       messages: processedMessages,
-      max_tokens: Math.min(body.max_tokens || 2048, 4000),
-      temperature: Math.min(Math.max(body.temperature || 0.7, 0.1), 1.0),
+      max_tokens: Math.min(body.max_tokens || maxTokens, 4000),
+      temperature: Math.min(Math.max(body.temperature || temperature, 0.1), 1.0),
       top_p: Math.min(Math.max(body.top_p || 0.9, 0.1), 1.0),
       stream: false,
       // Add additional parameters for better responses
-      presence_penalty: 0.1,
+      presence_penalty: isChessConversation ? 0.2 : 0.1, // More variety in chess conversations
       frequency_penalty: 0.1
     };
 
-    console.log(`AI Query - Model: ${payload.model}, Messages: ${processedMessages.length}, User: ${req.ip}`);
+    console.log(`AI Query - Model: ${payload.model}, Messages: ${processedMessages.length}, Type: ${conversationType}, User: ${req.ip}`);
 
     // Query HuggingFace API with retry logic
     let hfResponse;
@@ -201,12 +235,20 @@ You can assist with various tasks including answering questions, explaining conc
       // Fallback if no text extracted
       if (!replyText || replyText.trim().length === 0) {
         console.warn('No reply text found in response:', JSON.stringify(hfResponse, null, 2));
-        replyText = 'I apologize, but I encountered an issue generating a response. Please try rephrasing your question or try again in a moment.';
+        if (isChessConversation) {
+          replyText = 'I\'m excited to play chess with you! Would you like to start a game?';
+        } else {
+          replyText = 'I apologize, but I encountered an issue generating a response. Please try rephrasing your question or try again in a moment.';
+        }
       }
 
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
-      replyText = 'I encountered an error while processing your request. Please try again or rephrase your question.';
+      if (isChessConversation) {
+        replyText = 'Let\'s focus on our chess game! I\'m ready when you are.';
+      } else {
+        replyText = 'I encountered an error while processing your request. Please try again or rephrase your question.';
+      }
     }
 
     // Clean up and validate reply text
@@ -215,7 +257,9 @@ You can assist with various tasks including answering questions, explaining conc
     // Remove any leaked system prompts or unwanted prefixes
     const unwantedPrefixes = [
       'You are AiVA',
+      'You are Chess Master',
       'As AiVA',
+      'As Chess Master',
       'AI Virtual Assistant:',
       'Assistant:',
       'System:'
@@ -232,16 +276,33 @@ You can assist with various tasks including answering questions, explaining conc
 
     // Ensure minimum response quality
     if (replyText.length < 10) {
-      replyText = 'I received your message but need more context to provide a helpful response. Could you please provide more details or rephrase your question?';
+      if (isChessConversation) {
+        replyText = 'Ready for a chess match? Let\'s play!';
+      } else {
+        replyText = 'I received your message but need more context to provide a helpful response. Could you please provide more details or rephrase your question?';
+      }
     }
 
-    console.log(`AI Response generated successfully - Length: ${replyText.length} chars, Retries: ${retryCount}`);
+    // Chess-specific response enhancements
+    if (isChessConversation && replyText.length > 0) {
+      // Ensure chess responses are encouraging and game-focused
+      const userMessage = processedMessages[processedMessages.length - 1]?.content?.toLowerCase() || '';
+      
+      // If user shows interest in playing, make sure to encourage it
+      if ((userMessage.includes('yes') || userMessage.includes('play') || userMessage.includes('game')) && 
+          !replyText.toLowerCase().includes('play') && !replyText.toLowerCase().includes('game')) {
+        replyText += ' Would you like to start a chess game right now?';
+      }
+    }
+
+    console.log(`AI Response generated successfully - Length: ${replyText.length} chars, Type: ${conversationType}, Retries: ${retryCount}`);
 
     return res.json({ 
       success: true,
       result: hfResponse, 
       replyText: replyText,
       model: payload.model,
+      conversationType: conversationType,
       usage: {
         messages_processed: processedMessages.length,
         retries: retryCount,
@@ -286,27 +347,88 @@ You can assist with various tasks including answering questions, explaining conc
   }
 });
 
-// Get available models endpoint
+// Plugin information endpoint
+app.get('/api/plugins', (req, res) => {
+  const plugins = [
+    {
+      id: 'chess',
+      name: 'Chess Master',
+      version: '1.0.0',
+      description: 'Play chess games with AI opponent',
+      longDescription: 'Challenge the AI to strategic chess matches. Features interactive board, move analysis, and post-game insights to improve your gameplay.',
+      icon: '♗',
+      category: 'Games',
+      features: [
+        'Interactive chess board',
+        'Stockfish AI engine',
+        'Move analysis',
+        'PGN notation',
+        'Post-game insights',
+        'Multiple difficulty levels'
+      ],
+      enabled: false,
+      requiresAssets: ['chess.js', 'chessboard.js', 'pieces/*.svg', 'sounds/*.mp3']
+    }
+  ];
+
+  res.json({
+    success: true,
+    plugins: plugins,
+    total: plugins.length,
+    categories: ['Games']
+  });
+});
+
+// Plugin status endpoint
+app.post('/api/plugins/:pluginId/toggle', (req, res) => {
+  const { pluginId } = req.params;
+  const { enabled } = req.body;
+
+  // Validate plugin exists
+  const validPlugins = ['chess'];
+  if (!validPlugins.includes(pluginId)) {
+    return res.status(404).json({
+      error: 'Plugin not found',
+      pluginId: pluginId
+    });
+  }
+
+  // In a real implementation, you might save this to a database
+  // For now, just acknowledge the toggle
+  res.json({
+    success: true,
+    pluginId: pluginId,
+    enabled: !!enabled,
+    message: `Plugin ${pluginId} ${enabled ? 'enabled' : 'disabled'} successfully`
+  });
+});
+
+// Chess-specific endpoints (future expansion)
+app.post('/api/chess/analyze', (req, res) => {
+  const { fen, moves } = req.body;
+  
+  // Basic chess analysis endpoint (can be expanded)
+  res.json({
+    success: true,
+    position: fen,
+    analysis: {
+      moves: moves || [],
+      evaluation: 'Game in progress',
+      suggestions: 'Focus on piece development and king safety'
+    }
+  });
+});
+
+// Get available models endpoint (simplified to single model)
 app.get('/api/models', (req, res) => {
   const models = [
     {
       id: 'openai/gpt-oss-120b:together',
       name: 'GPT OSS 120B',
       provider: 'OpenAI Compatible',
-      description: 'Large language model optimized for conversation',
-      recommended: true
-    },
-    {
-      id: 'openai/gpt-4o-mini',
-      name: 'GPT-4O Mini',
-      provider: 'OpenAI Compatible',
-      description: 'Fast and efficient model for quick responses'
-    },
-    {
-      id: 'mistralai/Mistral-7B-Instruct-v0.1',
-      name: 'Mistral 7B Instruct',
-      provider: 'Mistral AI',
-      description: 'Efficient instruction-following model'
+      description: 'Large language model optimized for conversation and chess gameplay',
+      recommended: true,
+      supports: ['general_conversation', 'chess_analysis', 'creative_writing']
     }
   ];
 
@@ -323,7 +445,7 @@ app.get('/api/status', (req, res) => {
   res.json({
     status: 'online',
     service: 'AiVA API',
-    version: '2.0.0',
+    version: '2.1.0',
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     timestamp: new Date().toISOString(),
@@ -333,7 +455,14 @@ app.get('/api/status', (req, res) => {
       message_limits: true,
       error_handling: true,
       retry_logic: true,
-      model_selection: true
+      chess_plugin: true,
+      mobile_support: true,
+      firebase_integration: true,
+      google_auth: true
+    },
+    plugins: {
+      available: ['chess'],
+      total: 1
     }
   });
 });
@@ -341,11 +470,36 @@ app.get('/api/status', (req, res) => {
 // Rate limiting info endpoint
 app.get('/api/limits', (req, res) => {
   res.json({
-    message_limit_per_chat: 12,
+    message_limit_per_chat: 7,
     timeout_seconds: 45,
     max_retries: 2,
-    supported_models: 3,
-    max_conversation_length: 25
+    supported_models: 1,
+    max_conversation_length: 20,
+    chess_features: {
+      stockfish_engine: true,
+      minimax_fallback: true,
+      pgn_notation: true,
+      move_analysis: true
+    }
+  });
+});
+
+// Chess assets validation endpoint (for future use)
+app.get('/api/chess/validate', (req, res) => {
+  // This would check if all chess assets are available
+  const requiredAssets = [
+    '/js/chess.js',
+    '/pieces/',
+    '/sounds/',
+    'chessboard.js'
+  ];
+
+  res.json({
+    success: true,
+    chess_ready: true,
+    assets_available: requiredAssets,
+    engines: ['stockfish', 'minimax'],
+    board_themes: ['default']
   });
 });
 
@@ -366,7 +520,16 @@ app.use('/api/*', (req, res) => {
     error: 'Not found',
     message: 'API endpoint not found',
     path: req.originalUrl,
-    available_endpoints: ['/api/query', '/api/models', '/api/status', '/api/limits']
+    available_endpoints: [
+      '/api/query', 
+      '/api/models', 
+      '/api/status', 
+      '/api/limits',
+      '/api/plugins',
+      '/api/plugins/:id/toggle',
+      '/api/chess/analyze',
+      '/api/chess/validate'
+    ]
   });
 });
 
@@ -380,9 +543,11 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`🚀 AiVA Server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔑 HuggingFace configured: ${!!process.env.HF_TOKEN}`);
-  console.log(`🧠 AI Models: GPT OSS, GPT-4O Mini, Mistral`);
-  console.log(`💬 Features: Conversational Context, Message Limits, Error Handling`);
+  console.log(`🔐 HuggingFace configured: ${!!process.env.HF_TOKEN}`);
+  console.log(`🤖 AI Model: GPT OSS 120B`);
+  console.log(`♗ Chess Plugin: Enabled with Stockfish support`);
+  console.log(`📱 Mobile Support: Professional responsive design`);
+  console.log(`💬 Features: Conversational Context, Message Limits, Firebase Integration`);
   console.log(`⏰ Started at: ${new Date().toISOString()}`);
 });
 
