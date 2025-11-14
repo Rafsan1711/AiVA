@@ -176,7 +176,7 @@ If users mention chess or show interest in chess-related topics, you can suggest
 
     // Prepare payload for HuggingFace API
     const payload = {
-      model: body.model || 'openai/gpt-oss-120b:together',
+      model: body.model || 'openai/gpt-oss-120b:novita',
       messages: processedMessages,
       max_tokens: Math.min(body.max_tokens || maxTokens, 4000),
       temperature: Math.min(Math.max(body.temperature || temperature, 0.1), 1.0),
